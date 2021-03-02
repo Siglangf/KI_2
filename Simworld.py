@@ -61,8 +61,10 @@ class Hex:
         return False
 
     def collect_reward(self, game_state):
-        if game_state == 2:
-            return 10
+        if game_state == 2 and self.player == (1, 0):
+            return 1
+        if game_state == 2 and self.player == (0, 1):
+            return -1
         else:
             return 0
 
@@ -77,7 +79,9 @@ class Hex:
         state = self.game_state()
         is_final = state > 0
         reward = self.collect_reward(state)
-        self.player = (0 if self.player[0] else 1, 0 if self.player[1] else 1)
+        if not is_final:
+            self.player = (0 if self.player[0]
+                           else 1, 0 if self.player[1] else 1)
         return self.board.to_tuple(), reward, is_final
 
     def action_to_string(self, action_cells):
@@ -96,8 +100,7 @@ class Cell:
         self.position = position
 
     def _repr__(self):
-        state = "Pegged" if self.state else "Empty"
-        return f"{state} cell at position ({self.position[0]},{self.position[1]})"
+        return str(self.position)
 
     def __str__(self):
         return str(self.position)
