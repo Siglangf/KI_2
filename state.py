@@ -60,7 +60,7 @@ class NimState(State):
 
 # player 1 is True, player 2 is false
 if __name__ == '__main__':
-    board = NimState(2, 7, True)
+    board = NimState(None, 2, 7, True)
 
 
 

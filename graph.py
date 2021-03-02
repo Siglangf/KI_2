@@ -20,7 +20,6 @@ class Node:
         self.win_count = 0
         self.parent = None
         self.children = [] # Liste med noder, kan children være en dictonary med key: child, value: [Q(s,a) + u(s,a)]?
-        self.expanded = 0
         self.state = state #state object, e.g. for NIM number of pices left
         self.value = 0 #tree policy value
 
@@ -30,14 +29,14 @@ class Node:
 
     def add_children(self, children):
         for child in children:
-            self.children.append(child)
-            child.parent = self
+            self.add_child(child)
 
     # Ultimate goal of MCTS: produce realistic Q(s,a) values
     # Q(s,a) = value (expected final result) of doing action a from state s.
     def compute_qsa(self):
         return self.win_count / self.visit_count
 
+    # u(s,a)
     def compute_usa(self, child):
         return math.sqrt(math.log(self.visit_count)) / (1 + child.visit_count)
 
