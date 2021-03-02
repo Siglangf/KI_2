@@ -12,7 +12,6 @@ import numpy as np
 # --------------------------------------------------------LOGIC---------------------------------------------------------
 
 class ANN:
-
     def __init__(self, lr, input_layer, hidden_layers, output_layer):
         self.lr = lr #learning rate
         self.input_layer  = input_layer
