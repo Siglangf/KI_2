@@ -24,6 +24,7 @@ class MCTS:
         return node
 
     # Node expansion: Expand the selected node, that is, add one or more children to the node (usually only one).
+    # Kankje ikke generere alle children til en node?
     def expand_node(self, node):
         moves = node.state.get_legal_moves()
         children_nodes = []
