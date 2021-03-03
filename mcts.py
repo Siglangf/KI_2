@@ -15,6 +15,13 @@ class MCTS:
     def __init__(self, state, root_node, ANN = 0):
         self.state = state
         self.tree = Tree(root_node)
+    
+    def get_probability_distribution(self, node):
+        total = sum(child.visit_count for child in node.children)
+        D = {}
+        for child in node.children:
+            D[child] = child.visit_count/total
+        return D
 
     # Tree search: traversing the tree from the root node to a leaf node using the tree policy.
     # We start at the root and find a path to a frontier node by iteratively selecting the best child.
