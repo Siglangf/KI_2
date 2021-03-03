@@ -12,14 +12,15 @@ from state import State, NimState
 # --------------------------------------------------------LOGIC---------------------------------------------------------
 
 class MCTS:
-    def __init__(self, state):
+    def __init__(self, state, root_node, ANN = 0):
         self.state = state
+        self.tree = Tree(root_node)
 
     # Tree search: traversing the tree from the root node to a leaf node using the tree policy.
     # We start at the root and find a path to a frontier node by iteratively selecting the best child.
-    def get_leaf_node(self, tree):
-        node = tree.root
-        while not node.state.is_game_over() and node.children:
+    def get_leaf_node(self):
+        node = self.tree.root
+        while node.children:
             node = self.tree_policy(node)
         return node
 
@@ -34,7 +35,6 @@ class MCTS:
             child_node = Node(child_state)
             children_nodes.append(child_node)
         node.add_children(children_nodes)
-        return child_node
 
     # Leaf evaluation: Return 1 if player win, 0 if tie, else return -1
     def get_leaf_evalutation(self, node):
@@ -77,7 +77,9 @@ class MCTS:
         if random.random() < eps:
             return random.choice(moves)  # choose random action
         else:
-            #ToDo: Må bruke et neural network her
+            # ToDo: Må bruke et neural network her
+            # Må vi ha et NN for hver state? Alle states har jo ulikt antall mulige actions, og da ulikt antall output?
+            # tror man tar med alle, og så fjerner de som ikke er mulig. 
             return random.choice(moves)
 
     # Tree policy: Choose branch with the highest combination of Q(s,a) + exploration bonus, u(s,a).
@@ -91,14 +93,19 @@ class MCTS:
 
 
 if __name__ == '__main__':
-    state = NimState(None, 3, 7, True)
+    state = NimState(None, 3, 10, True)
     root_node = Node(state)
-    mtcs = MCTS(NimState)
-    tree = Tree(root_node)
+    mtcs = MCTS(NimState, root_node) # input: game, root_node
+
+    # M is number of MCTS simulations
+    # For NIM and Ledge an M value of 500 is often sufficient
+    # kan også bruke en time-limit:)) på ett-to sekunder for hvert kall på MCTS
+    M = 500
 
     # tree search to get leaf node
-    leaf_node = mtcs.get_leaf_node(tree)
+    leaf_node = mtcs.get_leaf_node()
     while not leaf_node.state.is_game_over():
+    #for i in range(M):
         print(f'The node we are expanding is {leaf_node}')
         # expanding leaf_node
         mtcs.expand_node(leaf_node)
@@ -106,7 +113,8 @@ if __name__ == '__main__':
         child_node, eval = mtcs.get_leaf_evalutation(leaf_node)
         # bacpropogate evaluation
         mtcs.backup(child_node, eval)
-        leaf_node = mtcs.get_leaf_node(tree)
+        # Starting a new MTCS simulation
+        leaf_node = mtcs.get_leaf_node()
 
     winner = leaf_node.state.get_winner()
     print(f'Game over, the winner is player {1 if winner else 2}')

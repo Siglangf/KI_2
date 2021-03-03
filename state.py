@@ -26,7 +26,7 @@ class State:
 
     def get_winner(self):
         if self.is_game_over():
-            return self.player
+            return not self.player
 
 
 # N: number of pices on the board
@@ -52,8 +52,7 @@ class NimState(State):
     # move: number of pices to remove
     def do_move(self, move):
         self.board = self.board - move
-        if not self.is_game_over(): #if game is over it is not the next palyers turn to move
-            self.player = not self.player
+        self.player = not self.player
 
     def __repr__(self):
         return f'Number of pices left is {self.board} and player {1 if self.player else 2}\'s turn'
