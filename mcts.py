@@ -72,14 +72,13 @@ class MCTS:
 
     # må skille på om det er player 1 eller player 2?
     # Should use more rollouts in the beginning and then the critic more towards the end
-    def default_policy(self, state, NN=0, eps=1, stoch=True):
+    def default_policy(self, state, ANN=0, eps=1, stoch=True):
         moves = state.get_legal_moves()
         if random.random() < eps:
             return random.choice(moves)  # choose random action
         else:
             # ToDo: Må bruke et neural network her
-            # Må vi ha et NN for hver state? Alle states har jo ulikt antall mulige actions, og da ulikt antall output?
-            # tror man tar med alle, og så fjerner de som ikke er mulig. 
+            # ANN.get_action_probabilities(state) ?
             return random.choice(moves)
 
     # Tree policy: Choose branch with the highest combination of Q(s,a) + exploration bonus, u(s,a).

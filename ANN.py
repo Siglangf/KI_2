@@ -41,6 +41,12 @@ class ANN:
     def get_error(self):
         return
 
-    # get probability distribution over possible actions
+    # get probability distribution over all possible actions from state
     def get_action_probabilities(self, state):
-        return
+        return self.model(get_tensor(state))
+
+# ------------------------------------------------------ STATIC METHODS-------------------------------------------------
+def get_tensor(state):
+    state = [tf.strings.to_number(bin, out_type=tf.dtypes.int32) for bin in state] # convert to array
+    state = tf.convert_to_tensor(np.expand_dims(state, axis=0))
+    return state
