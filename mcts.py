@@ -34,23 +34,20 @@ class MCTS:
             child_node = Node(child_state)
             children_nodes.append(child_node)
         node.add_children(children_nodes)
-        # Do a rollout from child node, aka. Play a random game from on of the generated child nodes.
-        # ToDo: Hvordan velge node til rollout ?
-        child_node = random.choice(node.children)
-        eval = self.get_leaf_evalutation(child_node)
-        # Backup: Update the evaluation of all nodes on the path from the root to the generated child node based on the playout.
-        self.backup(child_node, eval)
         return child_node
 
     # Leaf evaluation: Return 1 if player win, 0 if tie, else return -1
     def get_leaf_evalutation(self, node):
-        winner = self.rollout(node)
+        # Do a rollout from child node, aka. Play a random game from on of the generated child nodes.
+        # ToDo: Hvordan velge node til rollout ?
+        child_node = random.choice(node.children)
+        winner = self.rollout(child_node)
         if node.state.player == winner: #player win
-            return 1
+            return child_node, 1
         elif not node.state.player == winner: #opponent win
-            return -1
+            return child_node, -1
         else:
-            return 0 #tie
+            return child_node, 0 #tie
 
     # Simulation: Play a random game from the generated child node using the default policy.
     # eps: During rollouts, the default policy may have a probability (ε) of choosing a random move rather than the best (so far) move.
@@ -62,6 +59,7 @@ class MCTS:
         return state.get_winner()
 
     #Backpropogation: updating relevant data (at all nodes and edges) on the path from the final state to the tree root node
+    # Backup: Update the evaluation of all nodes on the path from the root to the generated child node based on the playout.
     def backup(self, node, eval, child = None):
         node.visit_count += 1
         # ToDo: Skal bare ta pluss når den vinner? ikke minus når den taper?
@@ -98,10 +96,16 @@ if __name__ == '__main__':
     mtcs = MCTS(NimState)
     tree = Tree(root_node)
 
+    # tree search to get leaf node
     leaf_node = mtcs.get_leaf_node(tree)
     while not leaf_node.state.is_game_over():
         print(f'The node we are expanding is {leaf_node}')
+        # expanding leaf_node
         mtcs.expand_node(leaf_node)
+        # do rollout evaluation
+        child_node, eval = mtcs.get_leaf_evalutation(leaf_node)
+        # bacpropogate evaluation
+        mtcs.backup(child_node, eval)
         leaf_node = mtcs.get_leaf_node(tree)
 
     winner = leaf_node.state.get_winner()
