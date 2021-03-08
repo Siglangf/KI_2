@@ -11,6 +11,8 @@ from graph import Node
 import copy
 from state import State, NimState
 import networkx as nx
+import pandas as pd
+import matplotlib.pyplot as plt
 # --------------------------------------------------------LOGIC---------------------------------------------------------
 
 
@@ -43,7 +45,8 @@ class MCTS:
         moves = node.state.get_legal_moves()
         children_nodes = []
         for move in moves:
-            child_state = copy.copy(node.state) # make a copy of the current state
+            # make a copy of the current state
+            child_state = copy.copy(node.state)
             child_state.do_move(move)  # update the current state
             child_node = Node(child_state)
             children_nodes.append(child_node)
@@ -52,7 +55,6 @@ class MCTS:
     # Leaf evaluation: Return 1 if player win, 0 if tie, else return -1
     def get_leaf_evalutation(self, node):
         # Do a rollout from child node, aka. Play a random game from on of the generated child nodes.
-        # ToDo: Hvordan velge node til rollout ?
         if node.children:
             node = random.choice(node.children)
         winner = self.rollout(node)
@@ -94,26 +96,29 @@ class MCTS:
     # Tree policy: Choose branch with the highest combination of Q(s,a) + exploration bonus, u(s,a).
     def tree_policy(self, node):
         children_stack = {}
+        c = self.c if node.state.player else -self.c
         for child in node.children:
-            c = self.c if child.state.player else -self.c
             children_stack[child] = child.q + node.compute_u(child, c)
         # player 1 choose branches with high Q values, player 2 choose those with low Q values.
         return max(children_stack, key=children_stack.get) if node.state.player else min(children_stack, key=children_stack.get)
 
 
 if __name__ == '__main__':
-    state = NimState(None, 2, 10, True)
+    state = NimState(None, 2, 12, True)
     root = Node(state)
     mtcs = MCTS(NimState, root)  # input: game, root_node
 
     # M is number of MCTS simulations
     # For NIM and Ledge an M value of 500 is often sufficient
     # kan også bruke en time-limit:)) på ett-to sekunder for hvert kall på MCTS
-    M = 15
+    M = 500
 
     # tree search to get leaf node
     leaf_node = mtcs.get_leaf_node()
     # while not leaf_node.state.is_game_over():
+    player1_win = 0
+    player2_win = 0
+    progress = []
     for i in range(M):
         print(f'The leaf node {leaf_node}')
         # expanding leaf_node
@@ -124,8 +129,19 @@ if __name__ == '__main__':
         mtcs.backup(rollout_node, reward)
         # Starting a new MTCS simulation
         leaf_node = mtcs.get_leaf_node()
-    
-    mtcs.root.visualize_tree()
 
-    #winner = leaf_node.state.get_winner()
-    #print(f'Game over, the winner is player {1 if winner else 2}')
+        if leaf_node.state.is_game_over():
+            winner = leaf_node.state.get_winner()
+            if winner:
+                player1_win += 1
+                progress.append(1)
+            else:
+                player2_win += 1
+                progress.append(2)
+
+    # df = pd.DataFrame([player1_win, player2_win], [1, 2])
+    # df.plot.bar()
+    df2 = pd.DataFrame(progress)
+    df2.plot()
+    plt.show()
+    # mtcs.root.visualize_tree()
