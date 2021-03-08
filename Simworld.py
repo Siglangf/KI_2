@@ -167,7 +167,8 @@ def visualize_state(environment):
         for pos, neighboar in cell.neighboars.items():
             G.add_edge(cell, neighboar)
 
-    positions = {cell: [cell.position[0], cell.position[1]] for cell in cells}
+    positions = {cell: [-10*cell.position[0] + 10*cell.position[1], -
+                        20*cell.position[0]-20*cell.position[1]] for cell in cells}
     colors = []
     plt.ioff()
     for node in G:
