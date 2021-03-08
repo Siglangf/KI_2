@@ -125,7 +125,7 @@ if __name__ == '__main__':
         mtcs.expand_node(leaf_node)
         # do rollout evaluation
         rollout_node, reward = mtcs.get_leaf_evalutation(leaf_node)
-        # backpropogate evaluation
+        # backpropogate exitevaluation
         mtcs.backup(rollout_node, reward)
         # Starting a new MTCS simulation
         leaf_node = mtcs.get_leaf_node()
@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     # df = pd.DataFrame([player1_win, player2_win], [1, 2])
     # df.plot.bar()
-    df2 = pd.DataFrame(progress)
-    df2.plot()
-    plt.show()
-    # mtcs.root.visualize_tree()
+    #df2 = pd.DataFrame(progress)
+    # df2.plot()
+    # plt.show()
+    mtcs.root.visualize_tree()
