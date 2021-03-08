@@ -12,9 +12,9 @@ from state import State, NimState
 # --------------------------------------------------------LOGIC---------------------------------------------------------
 
 class MCTS:
-    def __init__(self, state, root_node, ANN = 0):
+    def __init__(self, state, root, ANN = 0):
         self.state = state
-        self.tree = Tree(root_node)
+        self.root = root
     
     def get_probability_distribution(self, node):
         total = sum(child.visit_count for child in node.children)
@@ -26,7 +26,7 @@ class MCTS:
     # Tree search: traversing the tree from the root node to a leaf node using the tree policy.
     # We start at the root and find a path to a frontier node by iteratively selecting the best child.
     def get_leaf_node(self):
-        node = self.tree.root
+        node = self.root
         while node.children:
             node = self.tree_policy(node)
         return node
@@ -34,6 +34,7 @@ class MCTS:
     # Node expansion: Expand the selected node, that is, add one or more children to the node (usually only one).
     # Kankje ikke generere alle children til en node?
     def expand_node(self, node):
+        node.visit_count += 1
         moves = node.state.get_legal_moves()
         children_nodes = []
         for move in moves:
@@ -65,10 +66,9 @@ class MCTS:
             state.do_move(move)
         return state.get_winner()
 
-    #Backpropogation: updating relevant data (at all nodes and edges) on the path from the final state to the tree root node
+    # Backpropogation: updating relevant data (at all nodes and edges) on the path from the final state to the tree root node
     # Backup: Update the evaluation of all nodes on the path from the root to the generated child node based on the playout.
     def backup(self, node, eval, child = None):
-        node.visit_count += 1
         # ToDo: Skal bare ta pluss når den vinner? ikke minus når den taper?
         if eval == 1:
             node.win_count += eval
@@ -99,9 +99,9 @@ class MCTS:
 
 
 if __name__ == '__main__':
-    state = NimState(None, 3, 10, True)
-    root_node = Node(state)
-    mtcs = MCTS(NimState, root_node) # input: game, root_node
+    state = NimState(None, 2, 10, True)
+    root = Node(state)
+    mtcs = MCTS(NimState, root) # input: game, root_node
 
     # M is number of MCTS simulations
     # For NIM and Ledge an M value of 500 is often sufficient
@@ -110,18 +110,18 @@ if __name__ == '__main__':
 
     # tree search to get leaf node
     leaf_node = mtcs.get_leaf_node()
-    while not leaf_node.state.is_game_over():
-    #for i in range(M):
+    # while not leaf_node.state.is_game_over():
+    for i in range(M):
         print(f'The node we are expanding is {leaf_node}')
         # expanding leaf_node
         mtcs.expand_node(leaf_node)
         # do rollout evaluation
         child_node, eval = mtcs.get_leaf_evalutation(leaf_node)
-        # bacpropogate evaluation
+        # backpropogate evaluation
         mtcs.backup(child_node, eval)
         # Starting a new MTCS simulation
         leaf_node = mtcs.get_leaf_node()
 
-    winner = leaf_node.state.get_winner()
-    print(f'Game over, the winner is player {1 if winner else 2}')
+    #winner = leaf_node.state.get_winner()
+    #print(f'Game over, the winner is player {1 if winner else 2}')
 

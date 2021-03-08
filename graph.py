@@ -1,27 +1,23 @@
-# ------------------------------------------------------EXPLANATION-----------------------------------------------------
+# -----------------------------------------------------EXPLANATION-----------------------------------------------------
 # DESCRIPTION:
 # The Node class is the basic component of a Tree used for the Monte Carlo Tree Search.
 # Object that keeps track of the non-static information about a game/episode e.g. number of boxes left
-
-# VARIABLES:
-# - state_manager: the state of the game. Type: StateManager
-# - parent: parent of the node. Type: Node
-# - prev_action: previous action taken to get to the node. Type depends on the game. Used to track changes.
-# - children: children of the node. Type: [Node, Node,..]
-# - visits: number of visits the node has experiences. Type: integer
-# - results: dictionary indicating results for each player. Type:  {-1: int, 1: int}
-# --------------------------------------------------------LOGIC---------------------------------------------------------
+#
+# -------------------------------------------------------IMPORTS-------------------------------------------------------
 import math
+# --------------------------------------------------------LOGIC--------------------------------------------------------
 
 
 class Node:
     def __init__(self, state):
-        self.visit_count = 0 #N(s) = number of visits to node
         self.win_count = 0
         self.parent = None
         self.children = [] # Liste med noder, kan children være en dictonary med key: child, value: [Q(s,a) + u(s,a)]?
         self.state = state #state object, e.g. for NIM number of pices left
-        self.value = 0 #tree policy value
+        
+        # Values that get updated through backward propagation of the MCTS
+        self.value = 0 # tree policy value
+        self.visit_count = 0 # N(s) = number of visits to node
 
     def add_child(self, child):
         self.children.append(child)
@@ -50,10 +46,6 @@ class Node:
 
     def __repr__(self):
         return f'Player: {1 if self.state.player else 2}, Pices left on board: {self.state.board}, Visits: {self.visit_count}, Value: {self.value}'
-
-class Tree:
-    def __init__(self, root):
-        self.root = root
 
 
 
