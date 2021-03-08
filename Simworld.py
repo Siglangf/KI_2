@@ -4,7 +4,7 @@ from random import randint
 import numpy as np
 NEIGHBOAR_MAPPING = {(0, 1): 'UP', (0, -1): 'DOWN', (-1, 0): 'LEFT',
                      (1, 0): 'RIGHT', (-1, 1): 'LEFT_DIAG', (1, -1): 'RIGHT_DIAG'}
-COLOR_MAP = {(0, 0): "white", (1, 0): "blue", (0, 1): "red"}
+COLOR_MAP = {0: "white", 1: "blue", 2: "red"}
 
 
 class Action:
@@ -15,17 +15,15 @@ class Action:
 
 
 class Hex:
-    def __init__(self, board_type, size, open_cells):
-        self.board_type = board_type
+    def __init__(self, size):
         self.size = size
-        self.open_cells = open_cells
-        # Player 1 represented as (1,0), and player two represented as (0,1)
-        self.player = (1, 0)
-        self.board = Board(board_type, size, open_cells)
+        # Player one represented as 1 and player two represented as 2
+        self.player = 1
+        self.board = Board(size)
         cells = self.board.cells
         # Defining owned sides of the board for each player
-        self.sides = {(1, 0): (
-            cells[0, :], cells[self.size-1, :]), (0, 1): (cells[:, 0], cells[:, self.size-1])}
+        self.sides = {1: (
+            cells[0, :], cells[self.size-1, :]), 2: (cells[:, 0], cells[:, self.size-1])}
 
     def game_state(self):
         '''Returns 2 if current player has won, 1 if the games is over and it's draw, 0 if the games is not over'''
@@ -40,6 +38,12 @@ class Hex:
         if len(self.legal_actions()) == 0:
             return 1
         return 0
+
+    def is_final(self, game_state=None):
+        # If no game state is provided, use search function
+        if game_state == None:
+            game_state = self.game_state()
+        return game_state > 0
 
     def search_connected(self, cell, visited):
         '''Depth first search, finding consecutive lines across each side'''
@@ -61,9 +65,11 @@ class Hex:
         return False
 
     def collect_reward(self, game_state):
-        if game_state == 2 and self.player == (1, 0):
+        # If someone has won, and it's player one
+        if game_state == 2 and self.player == 1:
             return 1
-        if game_state == 2 and self.player == (0, 1):
+        # If someone has won, and it's player two
+        if game_state == 2 and self.player == 2:
             return -1
         else:
             return 0
@@ -77,11 +83,10 @@ class Hex:
         action_cell = self.board.cell_from_position(action)
         action_cell.state = self.player
         state = self.game_state()
-        is_final = state > 0
+        is_final = self.is_final(state)
         reward = self.collect_reward(state)
         if not is_final:
-            self.player = (0 if self.player[0]
-                           else 1, 0 if self.player[1] else 1)
+            self.player = 1 if self.player == 2 else 2
         return self.board.to_tuple(), reward, is_final
 
     def action_to_string(self, action_cells):
@@ -91,7 +96,7 @@ class Hex:
         return self.board.to_tuple()
 
     def reset(self):
-        self.__init__(self.board_type, self.size, self.open_cells)
+        self.__init__(self.size)
 
 
 class Cell:
@@ -107,26 +112,15 @@ class Cell:
 
 
 class Board:
-    def __init__(self, board_type, size, open_cells):
-        self.board_type = board_type
+    def __init__(self, size):
         self.size = size
-        self.open_cells = open_cells
-
-        # Initializing cell object
-        if board_type == "triangle":
-            self.cells = np.array([[Cell((0, 0), [j, i]) for i in range(
-                size-j)] for j in range(self.size)], dtype=object)
-        elif board_type == "diamond":
-
-            self.cells = np.array(
-                [[Cell((0, 0), [i, j]) for i in range(self.size)] for j in range(self.size)])
-        else:
-            raise ValueError("Board type must be 'triangle' or 'diamond'")
-
+        # Initializing cell objects
+        self.cells = np.array([[Cell(state=0, position=[i, j])
+                                for i in range(self.size)] for j in range(self.size)])
         self.connect_adjacent()
 
     def get_empty_cells(self):
-        return [cell for cell in np.hstack(self.cells) if cell.state == (0, 0)]
+        return [cell for cell in np.hstack(self.cells) if cell.state == 0]
 
     def connect_adjacent(self):
         '''Connect adjecent cells to each other in cell.neighboars'''
@@ -158,7 +152,7 @@ class Board:
         return tuple(l)
 
 
-def visualize_state(environment):
+def visualize_state(environment, show_labels=False):
     Board = environment.board
     cells = np.hstack(Board.cells)
     G = nx.Graph()
@@ -174,6 +168,16 @@ def visualize_state(environment):
     for node in G:
         colors.append(COLOR_MAP[node.state])
     fig = plt.figure()
-    nx.draw(G, pos=positions, ax=fig.add_subplot(), node_color=colors)
+    nx.draw(G, pos=positions, ax=fig.add_subplot(),
+            node_color=colors, with_labels=show_labels)
     plt.close()
+    if environment.is_final():
+        if environment.player == 1:
+            winner = "Blue player"
+        elif environment.player == 2:
+            winner = "Red player"
+        else:
+            winner = "No player"
+        print(f"{winner} won the game")
+
     return fig
