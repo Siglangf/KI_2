@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     # df = pd.DataFrame([player1_win, player2_win], [1, 2])
     # df.plot.bar()
-    df2 = pd.DataFrame(progress)
-    df2.plot()
-    plt.show()
-    # mtcs.root.visualize_tree()
+    #df2 = pd.DataFrame(progress)
+    # df2.plot()
+    # plt.show()
+    mtcs.root.visualize_tree()

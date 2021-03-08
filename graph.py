@@ -36,7 +36,7 @@ class Node:
     # Q(s,a) = value (expected final result) of doing action a from state s.
     def compute_q(self, reward):
         self.total += reward
-        #return (reward - self.q) / self.visit_count
+        # return (reward - self.q) / self.visit_count
         return self.total / self.visit_count
 
     # u(s,a)
@@ -53,22 +53,22 @@ class Node:
 
     def visualize_tree(self):
         G = nx.Graph()
-        id_stack = [0]
+        global id_counter
+        id_counter = 0
         G.add_node(0)
         self.id = 0
-        self.add_children_to_graph(self, G, id_stack)
+        self.add_children_to_graph(self, G)
         pos = graphviz_layout(G, prog="dot")
         nx.draw_networkx(G, pos)
         plt.show()
 
-    def add_children_to_graph(self, node, G, id_stack):
+    def add_children_to_graph(self, node, G):
+        global id_counter
         if node.children:
-            last_id = id_stack[-1]
-            id_num = id_stack.pop(0)
             for i, child in enumerate(node.children):
-                child_num = last_id+i+1
-                G.add_node(child_num)
-                G.add_edge(id_num, child_num)
-                id_stack.append(id_num+child_num)
+                id_counter += 1
+                child.id = id_counter
+                G.add_node(child.id)
+                G.add_edge(node.id, child.id)
             for child in node.children:
-                self.add_children_to_graph(child, G, id_stack)
+                self.add_children_to_graph(child, G)
