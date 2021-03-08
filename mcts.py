@@ -125,7 +125,7 @@ if __name__ == '__main__':
         mtcs.expand_node(leaf_node)
         # do rollout evaluation
         rollout_node, reward = mtcs.get_leaf_evalutation(leaf_node)
-        # backpropogate exitevaluation
+        # backpropogate evaluation
         mtcs.backup(rollout_node, reward)
         # Starting a new MTCS simulation
         leaf_node = mtcs.get_leaf_node()
