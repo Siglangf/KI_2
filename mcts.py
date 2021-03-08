@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 
 class MCTS:
-    def __init__(self, game, root, c=1, ANN=0):
+    def __init__(self, game, root, c=2, ANN=0):
         self.game = game
         self.root = root
         self.c = c
@@ -104,14 +104,14 @@ class MCTS:
 
 
 if __name__ == '__main__':
-    state = NimState(None, 2, 12, True)
+    state = NimState(None, 3, 12, True)
     root = Node(state)
     mtcs = MCTS(NimState, root)  # input: game, root_node
 
     # M is number of MCTS simulations
     # For NIM and Ledge an M value of 500 is often sufficient
     # kan også bruke en time-limit:)) på ett-to sekunder for hvert kall på MCTS
-    M = 500
+    M = 200
 
     # tree search to get leaf node
     leaf_node = mtcs.get_leaf_node()
@@ -144,4 +144,4 @@ if __name__ == '__main__':
     #df2 = pd.DataFrame(progress)
     # df2.plot()
     # plt.show()
-    mtcs.root.visualize_tree()
+    mtcs.root.visualize_tree(show_label=True)
