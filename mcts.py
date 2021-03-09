@@ -104,6 +104,7 @@ class MCTS:
 
 if __name__ == '__main__':
     state = Hex(4)
+    #state = NimState(None, K=2, board=12, player=1)
     root = Node(state)
     mtcs = MCTS(Hex, root)  # input: game, root_node
 
