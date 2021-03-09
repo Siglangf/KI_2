@@ -64,7 +64,9 @@ class Hex:
                 return True
         return False
 
-    def collect_reward(self, game_state):
+    def collect_reward(self, game_state=None):
+        if game_state == None:
+            game_state = self.game_state()
         # If someone has won, and it's player one
         if game_state == 2 and self.player == 1:
             return 1
@@ -97,6 +99,9 @@ class Hex:
 
     def reset(self):
         self.__init__(self.size)
+
+    def __repr__(self):
+        return self.board.get_empty_cells()
 
 
 class Cell:
@@ -150,6 +155,9 @@ class Board:
         for row in self.cells:
             l.append(tuple([cell.state for cell in row]))
         return tuple(l)
+
+    def __repr__(self):
+        return str(len(self.get_empty_cells()))
 
 
 def visualize_state(environment, show_labels=False):
