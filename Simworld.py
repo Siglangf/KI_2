@@ -178,6 +178,18 @@ def visualize_state(environment, show_labels=False):
     fig = plt.figure()
     nx.draw(G, pos=positions, ax=fig.add_subplot(),
             node_color=colors, with_labels=show_labels)
+
+    fig = plt.figure(1)
+    fig.axes[0].annotate('Blue side', xy=(0.26, 0.76),  xycoords='axes fraction',
+                         xytext=(0.1, 0.99), textcoords='axes fraction',
+                         arrowprops=dict(facecolor='blue', shrink=0.1),
+                         horizontalalignment='right', verticalalignment='top',
+                         )
+    fig.axes[0].annotate('Red side', xy=(0.73, 0.76),  xycoords='axes fraction',
+                         xytext=(0.99, 0.99), textcoords='axes fraction',
+                         arrowprops=dict(facecolor='red', shrink=0.1),
+                         horizontalalignment='right', verticalalignment='top',
+                         )
     plt.close()
     if environment.is_final():
         if environment.player == 1:
