@@ -1,6 +1,5 @@
 # -----------------------------------------------------EXPLANATION-----------------------------------------------------
-# In the ANET, the learning rate, the number of hidden layers and neurons per layer, 
-# along with any of the following activation functions for hidden nodes: linear, sigmoid, tanh, RELU.
+# Learning rate, number of hidden layers, neurons per layer, activation functions for hidden nodes: linear, sigmoid, tanh, RELU.
 # -------------------------------------------------------IMPORTS-------------------------------------------------------
 import torch
 import torch.nn as nn
@@ -42,9 +41,10 @@ class ANET(nn.Module):
                 }
        return optimizers[optimizer]
         
-    # Fully connected layer, Linear
-    # Could use nn.Conv1d (1D convolutional networks)
     def get_layers(self, hidden_layers, activation_function):
+        """
+        Generate all layers.
+        """
         layers = [torch.nn.Linear(self.input_size, hidden_layers[0])] # arg: input layer size, output layer size
         layers.append(torch.nn.Dropout(p = 0.2)) #During training, randomly zeroes some of the elements of the input tensor
         layers.append(activation_function) if activation_function != None else None
@@ -87,7 +87,6 @@ class ANET(nn.Module):
     
     def get_move(self, state: torch.Tensor):
         """
-        Forward the game_state through ANET and return the conditional softmax of the output
         :param state:  game state, state = [2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 2, 1, 0, 1]
         :return: probability distribution of all legal actions, and index of the best action
         """
@@ -98,9 +97,9 @@ class ANET(nn.Module):
 
     def get_action_probabilities(self, state: torch.Tensor):
         """
-        Probability distribution over all possible actions from state.
-        :param state: state in currenten game
-        :return: ANET probability distribution
+        Forward the game state through ANET and return the conditional softmax of the output.
+        :param state: game state
+        :return: Probability distribution over all possible actions from state.
         """
         # Forward through ANET
         output = self.forward(state)
