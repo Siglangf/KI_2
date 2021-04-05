@@ -20,15 +20,11 @@ class Node:
         self.state = state  # The board state as this node, ex. for NIM number of pices left on the board.
         # self.to_play = to_play # The player whose turn it is. (1 or -1)
 
-        # Values that get updated through backward propagation of the MCTS
         self.visit_count = 0  # N(s) = number of times this state was visited during MCTS. "Good" are visited more then "bad" states.
         self.value_sum = 0 # The total value of this state from all visits
         
         self.node_id = Node.counter 
         Node.counter +=  1
-    
-    def set_parent(self, node):
-        self.parent = node
 
     def add_child(self, child):
         self.children.append(child)
@@ -37,9 +33,6 @@ class Node:
     def add_children(self, children):
         for child in children:
             self.add_child(child)
-    
-    def expanded(self):
-        return len(self.children) > 0
 
     # Ultimate goal of MCTS: produce realistic Q(s,a) values
     # Q(s,a) = value (expected final result) of doing action a from state s.
@@ -50,12 +43,11 @@ class Node:
 
     # u(s,a)
     def compute_u(self, c):
-        if self.parent.visit_count == 0: #må fikses
+        if self.parent.visit_count == 0: #Quick fix, since not possible to take math.log(0). MÅ ENDRES!!!
             return float('inf')
-        return c * math.sqrt(math.log(self.parent.visit_count) / (self.visit_count + 1)) # math.log is the natural logarithm 
+        return c * math.sqrt(math.log(self.parent.visit_count) / (self.visit_count + 1))
 
     def __repr__(self):
-        #return f'ID: {self.node_id} Player: {1 if self.state.player else 2}, Pices left: {self.state.board}, Visits: {self.visit_count}'
         return f'ID: {self.node_id}, to_play: {self.state.player}, Pices left: {self.state.board}, Visits: {self.visit_count}, Value sum: {self.value_sum}'
 
     def visualize_tree(self):
