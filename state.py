@@ -14,7 +14,7 @@ import copy
 class State:
     def __init__(self, board: int, player: int):
         self.board = board
-        self.player = player
+        self.player = player #to_play
 
     def legal_actions(self):
         pass
@@ -49,10 +49,11 @@ class NimState(State):
     def is_final(self):
         return self.board == 0
 
-    def collect_reward(self):
-        if self.is_final() and self.player == 1:
+    # return 0 if not ended, 1 if player 1 wins, -1 if player 1 lost
+    def collect_reward(self): 
+        if self.get_winner() == 1:
             return 1
-        elif self.is_final() and self.player == 2:
+        elif self.get_winner() == 2:
             return -1
         else:
             return 0
@@ -65,10 +66,13 @@ class NimState(State):
         self.board = self.board - move
         self.player = 1 if self.player == 2 else 2
 
+    def get_winner(self):
+        if not self.is_final():
+            return None
+        else:
+            return 1 if self.player == 2 else 2
+            
+
     def __repr__(self):
         return f'Number of pices left is {self.board} and player {1 if self.player else 2}\'s turn'
 
-
-# player 1 is True, player 2 is false
-if __name__ == '__main__':
-    board = NimState(None, 2, 7, True)
