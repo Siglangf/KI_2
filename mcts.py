@@ -81,15 +81,22 @@ class MCTS:
         if node.parent:
             self.backup(node.parent, reward, node)
 
-    # må skille på om det er player 1 eller player 2?
-    # Should use more rollouts in the beginning and then the critic more towards the end
+    # ToDo: må skille på om det er player 1 eller player 2?
+    # ToDo: Should use more rollouts in the beginning and then the critic more towards the end
     def default_policy(self, state, ANN=0, eps=1, stoch=True):
+        """
+        : state: state of the current game
+        : return: action
+        """
         actions = state.legal_actions()
         if random.random() < eps:
             return random.choice(actions)  # choose random action
         else:
-            # ToDo: Må bruke et neural network her
-            # ANN.get_action_probabilities(state) ?
+            """
+            ToDo: Må bruke et neural network her
+            : state: [2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 2, 1, 0, 1]
+            """
+            # D, action_index = ANN.get_move(state)
             return random.choice(actions)
 
     # Tree policy: Choose branch with the highest combination of Q(s,a) + exploration bonus, u(s,a).
