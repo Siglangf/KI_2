@@ -26,38 +26,44 @@ class MCTS:
         self.game = game
         self.root = None
         self.c = c
-    
-    # ToDO: Roten er den staten man er kommet til i "the actual game"
+
     def set_root(self, node):
+        """
+        Root is the current state in "the actual game" (an episode).
+        """
         self.root = node
         self.root.parent = None
     
     def run(self, num_simulations = 4):
         if self.root.visit_count == 0:
-            self.expand_node(self.root)
+            self.expand(self.root)
 
         for _ in range(num_simulations):
             # SELECT
             leaf_node = self.get_leaf_node(self.root)
             # EXPAND / ROLLOUT
             if leaf_node.visit_count > 0 and not leaf_node.state.is_final():
-                self.expand_node(leaf_node)
+                self.expand(leaf_node)
                 child = random.choice(leaf_node.children)
                 rollout_node, reward = self.rollout(child) 
             else:
-                # print(f'Rollout')
                 rollout_node, reward = self.rollout(leaf_node)
             # BACKUP
             self.backup(rollout_node, reward)
 
-    # Tree search: traversing the tree from the root node to a leaf node using the tree policy.
+
     def get_leaf_node(self, node):
+        """
+        Tree search, traversing the tree from the root node to a leaf node using the tree policy.
+        """
         while node.children:
             node = self.tree_policy(node)
         return node
 
-    # Node expansion: Expand the selected node, that is, add one or more children to the node.
-    def expand_node(self, node):
+    def expand(self, node):
+        """
+        Expand the selected node, that is, add one or more children to the node
+        """
         if node.state.is_final():
             return
         actions = node.state.legal_actions()
@@ -69,16 +75,18 @@ class MCTS:
             children_nodes.append(child_node)
         node.add_children(children_nodes)
 
-    # Play a game from node using the default policy. Return 1 if player win, 0 if tie, else return -1
-    # eps: During rollouts, the default policy may have a probability (ε) of choosing a random move rather than the best (so far) move.
     def rollout(self, node, eps=1, ANN=None):
+        """
+        Play a game (rollout game) from node using the default policy.
+        : return: node, reward
+        """
         state = copy.copy(node.state)  # make a copy of the current state
         while not state.is_final():
             action = self.default_policy(state)
             state.step(action)
         return node, state.collect_reward()
 
-    # Backpropogation: updating relevant data (at all nodes and edges) on the path from the final state to the tree root node
+    # Backpropogation: updating relevant data on the path from the final state to the tree root node
     def backup(self, node, reward):
         node.visit_count += 1
         node.value_sum += reward
@@ -88,6 +96,7 @@ class MCTS:
     # ToDo: Should use more rollouts in the beginning and then the critic more towards the end
     def default_policy(self, state, ANN=0, eps=1, stoch=True):
         """
+        : eps: During rollouts, the default policy may have a probability (ε) of choosing a random move rather than the best (so far) move.
         : state: state of the current game
         : return: action
         """
@@ -102,8 +111,11 @@ class MCTS:
             # D, action_index = ANN.get_move(state)
             return random.choice(actions)
 
-    # Tree policy: Choose branch with the highest combination of Q(s,a) + exploration bonus, u(s,a)
     def tree_policy(self, node):
+        """
+        Tree policy: Player 1/Player 2 choose branch with the highets/lowest combination of Q(s,a) + exploration bonus, u(s,a) 
+        :return: Node
+        """
         children_stack = {}
         c = self.c if node.state.player == 1 else -self.c
         for child in node.children:
@@ -131,7 +143,7 @@ class MCTS:
 if __name__ == '__main__':
     # Episode starts:
     # Creating the starting board state
-    s_init = NimState(None, K=4, board=9, player=1) # With K=4 and board=10 the starting player has the guaranteed win
+    s_init = NimState(None, K=4, board=9, player=1) # With K=4 and board=9 the starting player has the guaranteed win
     root = Node(s_init)
     # Initialize MCTS to a single root
     board_mcts = MCTS(s_init) 
