@@ -50,7 +50,7 @@ class Node:
     def __repr__(self):
         return f'ID: {self.node_id}, to_play: {self.state.player}, Pices left: {self.state.board}, Visits: {self.visit_count}, Value sum: {self.value_sum}'
 
-    def visualize_tree(self):
+    def visualize_tree(self, show_label):
         G = nx.Graph()
         global id_counter
         id_counter = 0
@@ -58,7 +58,7 @@ class Node:
         self.id = 0
         self.add_children_to_graph(self, G)
         pos = graphviz_layout(G, prog="dot")
-        nx.draw_networkx(G, pos)
+        nx.draw_networkx(G, pos, with_labels=show_label)
         plt.show()
 
     def add_children_to_graph(self, node, G):

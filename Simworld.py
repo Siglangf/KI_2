@@ -15,15 +15,15 @@ class Action:
 
 
 class Hex:
-    def __init__(self, size):
+    def __init__(self, size,start_player=1):
         self.size = size
         # Player one represented as 1 and player two represented as 2
-        self.player = 1
+        self.player = start_player
         self.board = Board(size)
         cells = self.board.cells
         # Defining owned sides of the board for each player
-        self.sides = {1: (
-            cells[0, :], cells[self.size-1, :]), 2: (cells[:, 0], cells[:, self.size-1])}
+        self.sides = {2: (
+            cells[0, :], cells[self.size-1, :]), 1: (cells[:, 0], cells[:, self.size-1])}
 
     def game_state(self):
         '''Returns 2 if current player has won, 1 if the games is over and it's draw, 0 if the games is not over'''
@@ -101,7 +101,7 @@ class Hex:
         self.__init__(self.size)
 
     def __repr__(self):
-        return self.board.get_empty_cells()
+        return f"Player {self.player}'s turn.Empty cells: {self.board.__repr__()}"
 
 
 class Cell:
@@ -178,6 +178,18 @@ def visualize_state(environment, show_labels=False):
     fig = plt.figure()
     nx.draw(G, pos=positions, ax=fig.add_subplot(),
             node_color=colors, with_labels=show_labels)
+
+    fig = plt.figure(1)
+    fig.axes[0].annotate('Player 2', xy=(0.26, 0.76),  xycoords='axes fraction',
+                         xytext=(0.1, 0.99), textcoords='axes fraction',
+                         arrowprops=dict(facecolor='red', shrink=0.1),
+                         horizontalalignment='right', verticalalignment='top',
+                         )
+    fig.axes[0].annotate('Player 1', xy=(0.73, 0.76),  xycoords='axes fraction',
+                         xytext=(0.99, 0.99), textcoords='axes fraction',
+                         arrowprops=dict(facecolor='blue', shrink=0.1),
+                         horizontalalignment='right', verticalalignment='top',
+                         )
     plt.close()
     if environment.is_final():
         if environment.player == 1:

@@ -177,8 +177,8 @@ if __name__ == '__main__':
     # M is number of MCTS simulations
     # For NIM and Ledge an M value of 500 is often sufficient
     # kan også bruke en time-limit:)) på ett-to sekunder for hvert kall på MCTS
-    M = 10000
 
+    M = 10000
     # tree search to get leaf node
     leaf_node = mtcs.get_leaf_node()
     # while not leaf_node.state.is_final():
