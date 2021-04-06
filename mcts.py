@@ -21,11 +21,13 @@ WIN = 2
 TIE = 1
 # ----------------------------------------------------------LOGIC------------------------------------------------------------
 
+
 class MCTS:
-    def __init__(self, game, c=1, ANN=0):
+    def __init__(self, game, anet, c=1, ANN=0):
         self.game = game
         self.root = None
         self.c = c
+        self.anet = anet
 
     def set_root(self, node):
         """
@@ -33,8 +35,8 @@ class MCTS:
         """
         self.root = node
         self.root.parent = None
-    
-    def run(self, num_simulations = 4):
+
+    def run(self, num_simulations=4):
         if self.root.visit_count == 0:
             self.expand(self.root)
 
@@ -45,12 +47,11 @@ class MCTS:
             if leaf_node.visit_count > 0 and not leaf_node.state.is_final():
                 self.expand(leaf_node)
                 child = random.choice(leaf_node.children)
-                rollout_node, reward = self.rollout(child) 
+                rollout_node, reward = self.rollout(child)
             else:
                 rollout_node, reward = self.rollout(leaf_node)
             # BACKUP
             self.backup(rollout_node, reward)
-
 
     def get_leaf_node(self, node):
         """
@@ -69,7 +70,8 @@ class MCTS:
         actions = node.state.legal_actions()
         children_nodes = []
         for action in actions:
-            child_state = copy.deepcopy(node.state) # make a copy of the current state
+            # make a copy of the current state
+            child_state = copy.deepcopy(node.state)
             child_state.step(action)  # update the current state
             child_node = Node(child_state)
             children_nodes.append(child_node)
@@ -121,7 +123,6 @@ class MCTS:
         for child in node.children:
             children_stack[child] = child.compute_q() + child.compute_u(c)
         return max(children_stack, key=children_stack.get) if node.state.player == 1 else min(children_stack, key=children_stack.get)
-    
 
     def get_probability_distribution(self, node):
         """
@@ -132,21 +133,23 @@ class MCTS:
         for child in node.children:
             D[child] = child.visit_count/total
         return D
-    
+
     def select_actual_move(self, D):
         """
         Select the actual action to take in an episode, select the edge with the highest visit count/probability
         :return: Node
         """
-        return max(D, key = D.get)
+        return max(D, key=D.get)
+
 
 if __name__ == '__main__':
     # Episode starts:
     # Creating the starting board state
-    s_init = NimState(None, K=4, board=9, player=1) # With K=4 and board=9 the starting player has the guaranteed win
+    # With K=4 and board=9 the starting player has the guaranteed win
+    s_init = NimState(None, K=4, board=9, player=1)
     root = Node(s_init)
     # Initialize MCTS to a single root
-    board_mcts = MCTS(s_init) 
+    board_mcts = MCTS(s_init)
     board_mcts.set_root(root)
     # While B_a is not in a final state
     while not board_mcts.root.state.is_final():
@@ -164,7 +167,8 @@ if __name__ == '__main__':
         new_root = board_mcts.select_actual_move(D)
         board_mcts.set_root(new_root)
 
-    print(f'The winner of the actual game is player {board_mcts.root.state.get_winner()}')
+    print(
+        f'The winner of the actual game is player {board_mcts.root.state.get_winner()}')
 
 
 """
@@ -177,8 +181,8 @@ if __name__ == '__main__':
     # M is number of MCTS simulations
     # For NIM and Ledge an M value of 500 is often sufficient
     # kan også bruke en time-limit:)) på ett-to sekunder for hvert kall på MCTS
-    M = 10000
 
+    M = 10000
     # tree search to get leaf node
     leaf_node = mtcs.get_leaf_node()
     # while not leaf_node.state.is_final():
