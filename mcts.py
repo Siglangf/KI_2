@@ -21,6 +21,7 @@ WIN = 2
 TIE = 1
 # ----------------------------------------------------------LOGIC------------------------------------------------------------
 
+
 class MCTS:
     def __init__(self, game, c=1, ANN=0):
         self.game = game
@@ -33,8 +34,8 @@ class MCTS:
         """
         self.root = node
         self.root.parent = None
-    
-    def run(self, num_simulations = 4):
+
+    def run(self, num_simulations=4):
         if self.root.visit_count == 0:
             self.expand(self.root)
 
@@ -45,12 +46,11 @@ class MCTS:
             if leaf_node.visit_count > 0 and not leaf_node.state.is_final():
                 self.expand(leaf_node)
                 child = random.choice(leaf_node.children)
-                rollout_node, reward = self.rollout(child) 
+                rollout_node, reward = self.rollout(child)
             else:
                 rollout_node, reward = self.rollout(leaf_node)
             # BACKUP
             self.backup(rollout_node, reward)
-
 
     def get_leaf_node(self, node):
         """
@@ -69,9 +69,10 @@ class MCTS:
         actions = node.state.legal_actions()
         children_nodes = []
         for action in actions:
-            child_state = copy.deepcopy(node.state) # make a copy of the current state
+            # make a copy of the current state
+            child_state = copy.deepcopy(node.state)
             child_state.step(action)  # update the current state
-            child_node = Node(child_state)
+            child_node = Node(child_state, action)
             children_nodes.append(child_node)
         node.add_children(children_nodes)
 
@@ -80,7 +81,7 @@ class MCTS:
         Play a game (rollout game) from node using the default policy.
         : return: node, reward
         """
-        state = copy.copy(node.state)  # make a copy of the current state
+        state = copy.deepcopy(node.state)  # make a copy of the current state
         while not state.is_final():
             action = self.default_policy(state)
             state.step(action)
@@ -121,32 +122,33 @@ class MCTS:
         for child in node.children:
             children_stack[child] = child.compute_q() + child.compute_u(c)
         return max(children_stack, key=children_stack.get) if node.state.player == 1 else min(children_stack, key=children_stack.get)
-    
 
-    def get_probability_distribution(self, node):
+    def get_probability_distribution(self, node, action_space):
         """
         From the self.root node calculate the distribution D
+        Todo: Må kanskje lagre action som førte til staten når vi har generert. Så mappern man D[action]=...
+        Todo: Konstant størrelse på probability distribution dictionaryen. Opprette den i
         """
+        # Invert such that action_space maps an action to an index
+        action_space = {v: k for k, v in action_space.items()}
         total = sum(child.visit_count for child in node.children)
-        D = {}
+        D = np.zeros(len(action_space))
+        child_dict = {}
         for child in node.children:
-            D[child] = child.visit_count/total
-        return D
-    
-    def select_actual_move(self, D):
-        """
-        Select the actual action to take in an episode, select the edge with the highest visit count/probability
-        :return: Node
-        """
-        return max(D, key = D.get)
+            D[action_space[child.pred_action]] = child.visit_count/total
+            child_dict[child] = child.visit_count/total
+
+        return D, max(child_dict, key=child_dict.get)
+
 
 if __name__ == '__main__':
     # Episode starts:
     # Creating the starting board state
-    s_init = NimState(None, K=4, board=9, player=1) # With K=4 and board=9 the starting player has the guaranteed win
+    # With K=4 and board=9 the starting player has the guaranteed win
+    s_init = NimState(None, K=4, board=9, player=1)
     root = Node(s_init)
     # Initialize MCTS to a single root
-    board_mcts = MCTS(s_init) 
+    board_mcts = MCTS(s_init)
     board_mcts.set_root(root)
     # While B_a is not in a final state
     while not board_mcts.root.state.is_final():
@@ -164,7 +166,8 @@ if __name__ == '__main__':
         new_root = board_mcts.select_actual_move(D)
         board_mcts.set_root(new_root)
 
-    print(f'The winner of the actual game is player {board_mcts.root.state.get_winner()}')
+    print(
+        f'The winner of the actual game is player {board_mcts.root.state.get_winner()}')
 
 
 """

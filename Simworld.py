@@ -15,7 +15,7 @@ class Action:
 
 
 class Hex:
-    def __init__(self, size,start_player=1):
+    def __init__(self, size, start_player=1):
         self.size = size
         # Player one represented as 1 and player two represented as 2
         self.player = start_player
@@ -80,6 +80,10 @@ class Hex:
         action_space = [Action(cell) for cell in self.board.get_empty_cells()]
         action_space = tuple([action.action_tuple for action in action_space])
         return action_space
+
+    def get_action_space(self):
+        "Todo: calculate all possible actions"
+        pass
 
     def step(self, action):
         action_cell = self.board.cell_from_position(action)

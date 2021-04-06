@@ -14,17 +14,22 @@ from networkx.drawing.nx_pydot import graphviz_layout
 
 class Node:
     counter = 0
-    def __init__(self, state):
-        self.parent = None # parent kan gi oss litt problemer siden vi hele tiden har en ny rot...
-        self.children = [] # A lookup of legal child positions
-        self.state = state  # The board state as this node, ex. for NIM number of pices left on the board.
+
+    def __init__(self, state, pred_action=None):
+        # parent kan gi oss litt problemer siden vi hele tiden har en ny rot...
+        self.parent = None
+        self.children = []  # A lookup of legal child positions
+        # The board state as this node, ex. for NIM number of pices left on the board.
+        self.state = state
+        self.pred_action = pred_action  # Store the action which led to the node
         # self.to_play = to_play # The player whose turn it is. (1 or -1)
 
-        self.visit_count = 0  # N(s) = number of times this state was visited during MCTS. "Good" are visited more then "bad" states.
-        self.value_sum = 0 # The total value of this state from all visits
-        
-        self.node_id = Node.counter 
-        Node.counter +=  1
+        # N(s) = number of times this state was visited during MCTS. "Good" are visited more then "bad" states.
+        self.visit_count = 0
+        self.value_sum = 0  # The total value of this state from all visits
+
+        self.node_id = Node.counter
+        Node.counter += 1
 
     def add_child(self, child):
         self.children.append(child)
@@ -43,7 +48,8 @@ class Node:
 
     # u(s,a)
     def compute_u(self, c):
-        if self.parent.visit_count == 0: #Quick fix, since not possible to take math.log(0). MÅ ENDRES!!!
+        # Quick fix, since not possible to take math.log(0). MÅ ENDRES!!!
+        if self.parent.visit_count == 0:
             return float('inf')
         return c * math.sqrt(math.log(self.parent.visit_count) / (self.visit_count + 1))
 
