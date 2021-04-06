@@ -11,20 +11,20 @@ from collections import OrderedDict
 
 class ANET(nn.Module):
 
-    def __init__(self, input_size, output_size=None, hidden_layers=(60, 30), lr=0.001, activation='ReLU', optimizer='Adam', EPOCHS=3):
+    def __init__(self, input_size=None, output_size=None, hidden_layers=(60, 30), lr=0.001, activation='ReLU', optimizer='Adam', EPOCHS=3):
         super(ANET, self).__init__()  # inherit from super()
 
         self.EPOCHS = EPOCHS
         # size of our input, player + board size * board size
-        self.input_size = input_size * input_size + 1
-        self.output_size = input_size*input_size + \
-            1 if output_size == None else output_size
+        self.input_size = input_size * input_size + \
+            1 if input_size == None else input_size
+        self.output_size = self.input_size-1 if output_size == None else output_size
         self.lr = lr  # should decay the lr ?
         self.activation_func = self.get_activation_func(activation)
         self.layers = self.get_layers(hidden_layers, self.activation_func)
         self.model = nn.Sequential(*self.layers)
         self.optimizer = self.get_optimizer(optimizer)
-        #self.loss_function = nn.CrossEntropyLoss()
+        # self.loss_function = nn.CrossEntropyLoss()
         self.loss_function = torch.nn.BCELoss(reduction="mean")
 
     def get_activation_func(self, activation):
@@ -96,12 +96,12 @@ class ANET(nn.Module):
         print(accuracy)
         return loss, accuracy  # loss.item()
 
-    def get_move(self, state: torch.Tensor):
+    def get_move(self, state):
         """
         :param state:  game state, state = [2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 2, 1, 0, 1]
         :return: probability distribution of all legal actions, and index of the best action
         """
-        state = torch.tensor(state)
+        state = torch.FloatTensor(state)
         D = self.get_action_probabilities(state)
         action_index = torch.argmax(D).item()
         return D, action_index
@@ -115,9 +115,11 @@ class ANET(nn.Module):
         # Forward through ANET
         output = self.forward(state)
         # Set positions that are already taken (cell filled) to zero
-        mask = torch.as_tensor([int(cell == 0)
-                               for cell in state], dtype=torch.int)
-        output *= mask
+        # state = state[1:]
+        # mask = #torch.as_tensor([int(cell == 0)
+        # for cell in state], dtype = torch.int)
+        # print(mask)
+        # output *= mask
         # Normalize values that are not equal to zero
         sum = torch.sum(output)
         output /= sum
@@ -135,7 +137,7 @@ class ANET(nn.Module):
 
 
 if __name__ == '__main__':
-    #x = np.asarray([[2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 2, 1, 0, 1]])
+    # x = np.asarray([[2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 2, 1, 0, 1]])
     x = [2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 2, 1, 0, 1]
     y = [2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 0, 0, 2, 0, 0, 1]
     anet = ANET(4)
