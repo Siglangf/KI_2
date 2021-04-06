@@ -1,10 +1,11 @@
-# ------------------------------------------------------EXPLANATION-----------------------------------------------------
+# ------------------------------------------------------EXPLANATION-------------------------------------------------------
 # DESCRIPTION:
 # The MCTS class contains all the logic in order to perform Monte Carlo Tree Search
+# Each simulation adds a single node to the game tree
 
 # INPUT:
 # - root_node: root_node for the Monte Carlo Search Tree
-# -------------------------------------------------------IMPORTS--------------------------------------------------------
+# -------------------------------------------------------IMPORTS-----------------------------------------------------------
 import random
 import numpy as np
 from graph import Node
@@ -15,82 +16,93 @@ import networkx as nx
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# --------------------------------------------------------CONSTANTS---------------------------------------------------------
+# --------------------------------------------------------CONSTANTS----------------------------------------------------------
 WIN = 2
 TIE = 1
-# --------------------------------------------------------LOGIC---------------------------------------------------------
-
+# ----------------------------------------------------------LOGIC------------------------------------------------------------
 
 class MCTS:
-    def __init__(self, game, root, c=2, ANN=0):
+    def __init__(self, game, c=1, ANN=0):
         self.game = game
-        self.root = root
+        self.root = None
         self.c = c
 
-    def get_probability_distribution(self, node):
-        total = sum(child.visit_count for child in node.children)
-        D = {}
-        for child in node.children:
-            D[child] = child.visit_count/total
-        return D
+    def set_root(self, node):
+        """
+        Root is the current state in "the actual game" (an episode).
+        """
+        self.root = node
+        self.root.parent = None
+    
+    def run(self, num_simulations = 4):
+        if self.root.visit_count == 0:
+            self.expand(self.root)
 
-    # Tree search: traversing the tree from the root node to a leaf node using the tree policy.
-    # We start at the root and find a path to a frontier node by iteratively selecting the best child.
-    def get_leaf_node(self):
-        node = self.root
+        for _ in range(num_simulations):
+            # SELECT
+            leaf_node = self.get_leaf_node(self.root)
+            # EXPAND / ROLLOUT
+            if leaf_node.visit_count > 0 and not leaf_node.state.is_final():
+                self.expand(leaf_node)
+                child = random.choice(leaf_node.children)
+                rollout_node, reward = self.rollout(child) 
+            else:
+                rollout_node, reward = self.rollout(leaf_node)
+            # BACKUP
+            self.backup(rollout_node, reward)
+
+
+    def get_leaf_node(self, node):
+        """
+        Tree search, traversing the tree from the root node to a leaf node using the tree policy.
+        """
         while node.children:
             node = self.tree_policy(node)
         return node
 
-    # Node expansion: Expand the selected node, that is, add one or more children to the node (usually only one).
-    # Kankje ikke generere alle children til en node?
-    def expand_node(self, node):
+    def expand(self, node):
+        """
+        Expand the selected node, that is, add one or more children to the node
+        """
         if node.state.is_final():
-            return node
+            return
         actions = node.state.legal_actions()
         children_nodes = []
         for action in actions:
-            # make a copy of the current state
-            child_state = copy.deepcopy(node.state)
+            child_state = copy.deepcopy(node.state) # make a copy of the current state
             child_state.step(action)  # update the current state
             child_node = Node(child_state)
             children_nodes.append(child_node)
         node.add_children(children_nodes)
 
-    # Leaf evaluation: Return 1 if player win, 0 if tie, else return -1
-    def get_leaf_evaluation(self, node):
-        # Do a rollout from child node, aka. Play a random game from on of the generated child nodes.
-        if node.children:
-            node = random.choice(node.children)
-        return node, self.rollout(node)
-
-    # Simulation: Play a random game from the generated child node using the default policy.
-    # eps: During rollouts, the default policy may have a probability (ε) of choosing a random move rather than the best (so far) move.
     def rollout(self, node, eps=1, ANN=None):
+        """
+        Play a game (rollout game) from node using the default policy.
+        : return: node, reward
+        """
         state = copy.copy(node.state)  # make a copy of the current state
         while not state.is_final():
             action = self.default_policy(state)
             state.step(action)
-        return state.collect_reward()
+        return node, state.collect_reward()
 
-    # Backpropogation: updating relevant data (at all nodes and edges) on the path from the final state to the tree root node
-    def backup(self, node, reward, child=None):
+    # Backpropogation: updating relevant data on the path from the final state to the tree root node
+    def backup(self, node, reward):
         node.visit_count += 1
-        if child:
-            child.q = child.compute_q(reward)
+        node.value_sum += reward
         if node.parent:
-            self.backup(node.parent, reward, node)
+            self.backup(node.parent, reward)
 
-    # ToDo: må skille på om det er player 1 eller player 2?
     # ToDo: Should use more rollouts in the beginning and then the critic more towards the end
     def default_policy(self, state, ANN=0, eps=1, stoch=True):
         """
+        : eps: During rollouts, the default policy may have a probability (ε) of choosing a random move rather than the best (so far) move.
         : state: state of the current game
         : return: action
         """
         actions = state.legal_actions()
         if random.random() < eps:
-            return random.choice(actions)  # choose random action
+            return random.choice(actions)
         else:
             """
             ToDo: Må bruke et neural network her
@@ -99,16 +111,63 @@ class MCTS:
             # D, action_index = ANN.get_move(state)
             return random.choice(actions)
 
-    # Tree policy: Choose branch with the highest combination of Q(s,a) + exploration bonus, u(s,a).
     def tree_policy(self, node):
+        """
+        Tree policy: Player 1/Player 2 choose branch with the highets/lowest combination of Q(s,a) + exploration bonus, u(s,a) 
+        :return: Node
+        """
         children_stack = {}
         c = self.c if node.state.player == 1 else -self.c
         for child in node.children:
-            children_stack[child] = child.q + node.compute_u(child, c)
-        # player 1 choose branches with high Q values, player 2 choose those with low Q values.
+            children_stack[child] = child.compute_q() + child.compute_u(c)
         return max(children_stack, key=children_stack.get) if node.state.player == 1 else min(children_stack, key=children_stack.get)
+    
+
+    def get_probability_distribution(self, node):
+        """
+        From the self.root node calculate the distribution D
+        """
+        total = sum(child.visit_count for child in node.children)
+        D = {}
+        for child in node.children:
+            D[child] = child.visit_count/total
+        return D
+    
+    def select_actual_move(self, D):
+        """
+        Select the actual action to take in an episode, select the edge with the highest visit count/probability
+        :return: Node
+        """
+        return max(D, key = D.get)
+
+if __name__ == '__main__':
+    # Episode starts:
+    # Creating the starting board state
+    s_init = NimState(None, K=4, board=9, player=1) # With K=4 and board=9 the starting player has the guaranteed win
+    root = Node(s_init)
+    # Initialize MCTS to a single root
+    board_mcts = MCTS(s_init) 
+    board_mcts.set_root(root)
+    # While B_a is not in a final state
+    while not board_mcts.root.state.is_final():
+        # Initialize Monte Carlo game board to same state as root
+        # For g_s in number of seach_games (simulations):
+        M = 500
+        board_mcts.run(M)
+        # D = distribution of visit counts in MCTS
+        D = board_mcts.get_probability_distribution(board_mcts.root)
+        # Add case (root, D)
+        # Choos actual move a* based on D
+        # Performe a* on root to produce sucsessor state s*
+        # Update B_a to s*
+        # In MCTS, retain subtree rooted as s*, discard everything else
+        new_root = board_mcts.select_actual_move(D)
+        board_mcts.set_root(new_root)
+
+    print(f'The winner of the actual game is player {board_mcts.root.state.get_winner()}')
 
 
+"""
 if __name__ == '__main__':
     state = Hex(4)
     #state = NimState(None, K=2, board=12, player=1)
@@ -160,3 +219,4 @@ if __name__ == '__main__':
     df2.plot()
     plt.show()
     # mtcs.root.visualize_tree()
+"""
