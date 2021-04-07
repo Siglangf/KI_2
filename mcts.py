@@ -77,7 +77,7 @@ class MCTS:
             children_nodes.append(child_node)
         node.add_children(children_nodes)
 
-    def rollout(self, node, eps=0.5, ANN=None):
+    def rollout(self, node, eps=0.7, ANN=None):
         """
         Play a game (rollout game) from node using the default policy.
         : return: node, reward
