@@ -64,6 +64,11 @@ class Hex:
                 return True
         return False
 
+    def get_winner(self):
+        if self.is_final():
+            return self.player
+        print("Game is not finished")
+
     def collect_reward(self, game_state=None):
         if game_state == None:
             game_state = self.game_state()
@@ -82,8 +87,9 @@ class Hex:
         return action_space
 
     def get_action_space(self):
-        "Todo: calculate all possible actions"
-        pass
+        empty_game = Hex(self.size, self.player)
+        actions = empty_game.legal_actions()
+        return {i: actions[i] for i in range(len(actions))}
 
     def step(self, action):
         action_cell = self.board.cell_from_position(action)
@@ -99,7 +105,9 @@ class Hex:
         return None
 
     def get_state(self):
-        return self.board.to_tuple()
+        board_flattened = np.hstack(self.board.to_tuple())
+        state = np.insert(board_flattened, 0, self.player)
+        return state
 
     def reset(self):
         self.__init__(self.size)
