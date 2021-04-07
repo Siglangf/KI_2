@@ -11,7 +11,7 @@ from collections import OrderedDict
 
 class ANET(nn.Module):
 
-    def __init__(self, input_size=None, output_size=None, hidden_layers=(60, 30), lr=0.001, activation='ReLU', optimizer='Adam', EPOCHS=3):
+    def __init__(self, input_size=None, output_size=None, hidden_layers=(60, 30, 20), lr=0.001, activation='ReLU', optimizer='Adam', EPOCHS=20):
         super(ANET, self).__init__()  # inherit from super()
 
         self.EPOCHS = EPOCHS
