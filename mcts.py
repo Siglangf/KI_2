@@ -36,7 +36,7 @@ class MCTS:
         self.root = node
         self.root.parent = None
 
-    def run(self, num_simulations=4):
+    def run_simulations(self, num_simulations=4):
         if self.root.visit_count == 0:
             self.expand(self.root)
 
@@ -77,14 +77,14 @@ class MCTS:
             children_nodes.append(child_node)
         node.add_children(children_nodes)
 
-    def rollout(self, node, eps=1, ANN=None):
+    def rollout(self, node, eps=0.5, ANN=None):
         """
         Play a game (rollout game) from node using the default policy.
         : return: node, reward
         """
         state = copy.deepcopy(node.state)  # make a copy of the current state
         while not state.is_final():
-            action = self.default_policy(state)
+            action = self.default_policy(state, eps=eps)
             state.step(action)
         return node, state.collect_reward()
 
@@ -110,8 +110,10 @@ class MCTS:
             ToDo: Må bruke et neural network her
             : state: [2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 2, 1, 0, 1]
             """
-            # D, action_index = ANN.get_move(state)
-            return random.choice(actions)
+            action_space = state.get_action_space()
+            state = state.get_state()
+            D, action_index = self.anet.get_move(state)
+            return action_space[action_index]
 
     def tree_policy(self, node):
         """
@@ -127,8 +129,6 @@ class MCTS:
     def get_probability_distribution(self, node, action_space):
         """
         From the self.root node calculate the distribution D
-        Todo: Må kanskje lagre action som førte til staten når vi har generert. Så mappern man D[action]=...
-        Todo: Konstant størrelse på probability distribution dictionaryen. Opprette den i
         """
         # Invert such that action_space maps an action to an index
         action_space = {v: k for k, v in action_space.items()}
@@ -140,87 +140,3 @@ class MCTS:
             child_dict[child] = child.visit_count/total
 
         return D, max(child_dict, key=child_dict.get)
-
-
-if __name__ == '__main__':
-    # Episode starts:
-    # Creating the starting board state
-    # With K=4 and board=9 the starting player has the guaranteed win
-    s_init = NimState(None, K=4, board=9, player=1)
-    root = Node(s_init)
-    # Initialize MCTS to a single root
-    board_mcts = MCTS(s_init)
-    board_mcts.set_root(root)
-    # While B_a is not in a final state
-    while not board_mcts.root.state.is_final():
-        # Initialize Monte Carlo game board to same state as root
-        # For g_s in number of seach_games (simulations):
-        M = 500
-        board_mcts.run(M)
-        # D = distribution of visit counts in MCTS
-        D = board_mcts.get_probability_distribution(board_mcts.root)
-        # Add case (root, D)
-        # Choos actual move a* based on D
-        # Performe a* on root to produce sucsessor state s*
-        # Update B_a to s*
-        # In MCTS, retain subtree rooted as s*, discard everything else
-        new_root = board_mcts.select_actual_move(D)
-        board_mcts.set_root(new_root)
-
-    print(
-        f'The winner of the actual game is player {board_mcts.root.state.get_winner()}')
-
-
-"""
-if __name__ == '__main__':
-    state = Hex(4)
-    #state = NimState(None, K=2, board=12, player=1)
-    root = Node(state)
-    mtcs = MCTS(Hex, root)  # input: game, root_node
-
-    # M is number of MCTS simulations
-    # For NIM and Ledge an M value of 500 is often sufficient
-    # kan også bruke en time-limit:)) på ett-to sekunder for hvert kall på MCTS
-
-    M = 10000
-    # tree search to get leaf node
-    leaf_node = mtcs.get_leaf_node()
-    # while not leaf_node.state.is_final():
-    player1_win = 0
-    player2_win = 0
-    draw = 0
-    progress = []
-    for i in range(M):
-        print(f'The leaf node {leaf_node}')
-        # expanding leaf_node
-        mtcs.expand_node(leaf_node)
-        # do rollout evaluation
-        rollout_node, reward = mtcs.get_leaf_evaluation(leaf_node)
-        # backpropogate evaluation
-        mtcs.backup(rollout_node, reward)
-        # Starting a new MTCS simulation
-        leaf_node = mtcs.get_leaf_node()
-
-        if leaf_node.state.is_final():
-            # 2 represents a win. 1 Represent a tie (0 represents not finished)
-            outcome = leaf_node.state.game_state()
-            player = leaf_node.state.player
-            print(player, outcome)
-            if outcome == WIN and player == 1:
-                player1_win += 1
-                progress.append(1)
-            elif outcome == WIN and player == 2:
-                player2_win += 1
-                progress.append(-1)
-            else:
-                draw += 1
-                progress.append(0)
-
-    df = pd.DataFrame([player1_win, player2_win, draw],
-                      ["Player 1", "Player 2", "Draw"])
-    df.plot.bar()
-    df2 = pd.DataFrame(progress)
-    df2.plot()
-    plt.show()
-    # mtcs.root.visualize_tree()
-"""

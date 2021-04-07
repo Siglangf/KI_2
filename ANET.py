@@ -11,13 +11,12 @@ from collections import OrderedDict
 
 class ANET(nn.Module):
 
-    def __init__(self, input_size=None, output_size=None, hidden_layers=(60, 30), lr=0.001, activation='ReLU', optimizer='Adam', EPOCHS=3):
+    def __init__(self, input_size=None, output_size=None, hidden_layers=(60, 30, 20), lr=0.001, activation='ReLU', optimizer='Adam', EPOCHS=20):
         super(ANET, self).__init__()  # inherit from super()
 
         self.EPOCHS = EPOCHS
         # size of our input, player + board size * board size
-        self.input_size = input_size * input_size + \
-            1 if input_size == None else input_size
+        self.input_size = input_size*input_size+1
         self.output_size = self.input_size-1 if output_size == None else output_size
         self.lr = lr  # should decay the lr ?
         self.activation_func = self.get_activation_func(activation)
@@ -72,6 +71,7 @@ class ANET(nn.Module):
         Take the given state and forward it through the network. Return the output of the network.
         :param x:  tensor([2., 1., 2., 1., 0., 0., 0., 2., 1., 0., 0., 2., 0., 2., 1., 0., 1.])
         """
+
         with torch.no_grad():
             return self.model(x)
 
@@ -90,10 +90,8 @@ class ANET(nn.Module):
             loss = self.loss_function(output, target)
             loss.backward()
             self.optimizer.step()
-            print(loss)  # For each EPOCH the loss should get smaller
         accuracy = output.argmax(dim=0).eq(
             target.argmax(dim=0)).sum().numpy()/len(target)
-        print(accuracy)
         return loss, accuracy  # loss.item()
 
     def get_move(self, state):
@@ -115,11 +113,10 @@ class ANET(nn.Module):
         # Forward through ANET
         output = self.forward(state)
         # Set positions that are already taken (cell filled) to zero
-        # state = state[1:]
-        # mask = #torch.as_tensor([int(cell == 0)
-        # for cell in state], dtype = torch.int)
-        # print(mask)
-        # output *= mask
+        state = state[1:]
+        mask = torch.as_tensor([int(cell == 0)
+                               for cell in state], dtype=torch.int)
+        output *= mask
         # Normalize values that are not equal to zero
         sum = torch.sum(output)
         output /= sum
