@@ -23,8 +23,7 @@ TIE = 1
 
 
 class MCTS:
-    def __init__(self, game, eps, anet, c=1, ANN=0):
-        self.game = game
+    def __init__(self, eps, anet, c=1, ANN=0):
         self.root = None
         self.anet = anet
         self.c = c

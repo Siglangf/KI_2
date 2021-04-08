@@ -32,7 +32,7 @@ BATCH_SIZE = 0.3
 
 # ANET parameters
 HIDDEN_LAYERS = (60, 30, 20)
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.01
 ACTIVATION = 'ReLU'
 OPTIMIZER = 'Adam'
 EPOCHS = 5
@@ -57,7 +57,7 @@ def train_anet(series_name, anet, board_size, environment, episodes, num_simulat
         is_final = environment.is_final()
         # Initialize mcts
         root = Node(environment)
-        board_mcts = MCTS(root, anet, EPSILON, C)
+        board_mcts = MCTS(EPSILON, anet, C)
         is_final = environment.is_final()
         while not is_final:
             board_mcts.set_root(root)
