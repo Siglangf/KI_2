@@ -4,7 +4,7 @@ from random import randint
 import numpy as np
 NEIGHBOAR_MAPPING = {(0, 1): 'UP', (0, -1): 'DOWN', (-1, 0): 'LEFT',
                      (1, 0): 'RIGHT', (-1, 1): 'LEFT_DIAG', (1, -1): 'RIGHT_DIAG'}
-COLOR_MAP = {0: "white", 1: "blue", 2: "red"}
+COLOR_MAP = {0: "white", 1: "red", 2: "black"}
 
 
 class Action:
@@ -105,6 +105,7 @@ class Hex:
         return None
 
     def get_state(self):
+        print(self.board.to_tuple())
         board_flattened = np.hstack(self.board.to_tuple())
         state = np.insert(board_flattened, 0, self.player)
         return state
@@ -194,12 +195,12 @@ def visualize_state(environment, show_labels=False):
     fig = plt.figure(1)
     fig.axes[0].annotate('Player 2', xy=(0.26, 0.76),  xycoords='axes fraction',
                          xytext=(0.1, 0.99), textcoords='axes fraction',
-                         arrowprops=dict(facecolor='red', shrink=0.1),
+                         arrowprops=dict(facecolor='black', shrink=0.1),
                          horizontalalignment='right', verticalalignment='top',
                          )
     fig.axes[0].annotate('Player 1', xy=(0.73, 0.76),  xycoords='axes fraction',
                          xytext=(0.99, 0.99), textcoords='axes fraction',
-                         arrowprops=dict(facecolor='blue', shrink=0.1),
+                         arrowprops=dict(facecolor='red', shrink=0.1),
                          horizontalalignment='right', verticalalignment='top',
                          )
     plt.close()

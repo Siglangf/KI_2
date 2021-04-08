@@ -23,11 +23,9 @@ class BasicClientActor(BasicClientActorAbs):
 
         # This is an example player who picks random moves. REMOVE THIS WHEN YOU ADD YOUR OWN CODE !!
         #############################
-        actor = ANET(self.board_size)
-        actor.load_anet(self.actor_tag, self.board_size, self.actor_level)
         if state[0] == 2:
             state[0] = 1
-        _, next_move = actor.get_move(state)
+        _, next_move = self.actor.get_move(state)
 
         # ?: switch row and col
 
@@ -52,6 +50,9 @@ class BasicClientActor(BasicClientActorAbs):
         self.series_id = series_id
         #############################
         self.board_size = game_params[0]
+        self.actor = ANET(self.board_size)
+        self.actor.load_anet(self.actor_tag, self.board_size, self.actor_level)
+
         ##############################
 
     def handle_game_start(self, start_player):
@@ -79,7 +80,7 @@ class BasicClientActor(BasicClientActorAbs):
         #############################
         #
         #
-        # YOUR CODE HERE
+
         #
         #
         ##############################
