@@ -105,7 +105,6 @@ class Hex:
         return None
 
     def get_state(self):
-        print(self.board.to_tuple())
         board_flattened = np.hstack(self.board.to_tuple())
         state = np.insert(board_flattened, 0, self.player)
         return state
