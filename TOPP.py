@@ -5,13 +5,13 @@ import random
 
 class TOPP:
 
-    def __init__(self, board_size, game, num_games, episodes, num_agents):
+    def __init__(self, series_name, board_size, game, num_games, episodes, num_agents):
         self.board_size = board_size
         self.game = game
-        self.agents = self.load_agents(episodes, num_agents)
+        self.agents = self.load_agents(series_name, episodes, num_agents)
         self.num_games = num_games
 
-    def load_agents(self, episodes, num_agents):
+    def load_agents(self, series_name, episodes, num_agents):
         """
         Load all pre-trained actor neural networks into a list of agents
         :return: list[ANET]
@@ -19,8 +19,8 @@ class TOPP:
         players = []
         for num_games_trained in range(0, episodes+1, int(episodes/(num_agents-1))):
             anet = ANET(self.board_size)
-            anet.load_anet(
-                self.board_size, num_games_trained)
+            anet.load_anet(series_name,
+                           self.board_size, num_games_trained)
             players.append(anet)
         print(players)
         return players
@@ -67,5 +67,5 @@ class TOPP:
 
 
 if __name__ == '__main__':
-    topp = TOPP(4, Hex, 10, 200, 5)
+    topp = TOPP("siggi", 4, Hex, 10, 200, 5)
     topp.run_tournament()

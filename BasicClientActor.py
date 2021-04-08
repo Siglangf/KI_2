@@ -1,5 +1,8 @@
 import math
+from Simworld import Hex
+from ANET import ANET
 from BasicClientActorAbs import BasicClientActorAbs
+
 
 class BasicClientActor(BasicClientActorAbs):
 
@@ -19,16 +22,20 @@ class BasicClientActor(BasicClientActorAbs):
         """
 
         # This is an example player who picks random moves. REMOVE THIS WHEN YOU ADD YOUR OWN CODE !!
-        next_move = tuple(self.pick_random_free_cell(
-            state, size=int(math.sqrt(len(state)-1))))
         #############################
-        #
-        #
-        # YOUR CODE HERE
-        #
-        # next_move = ???
+        actor = ANET(self.board_size)
+        actor.load_anet(self.actor_tag, self.board_size, self.actor_level)
+        if state[0] == 2:
+            state[0] = 1
+        _, next_move = actor.get_move(state)
+
+        # ?: switch row and col
+
+        row = next_move//self.board_size
+        col = next_move % self.board_size
+        next_move = (row, col)
+        return row, col
         ##############################
-        return next_move
 
     def handle_series_start(self, unique_id, series_id, player_map, num_games, game_params):
         """
@@ -41,13 +48,10 @@ class BasicClientActor(BasicClientActorAbs):
         :return
 
         """
+
         self.series_id = series_id
         #############################
-        #
-        #
-        # YOUR CODE (if you have anything else) HERE
-        #
-        #
+        self.board_size = game_params[0]
         ##############################
 
     def handle_game_start(self, start_player):
@@ -125,7 +129,7 @@ class BasicClientActor(BasicClientActorAbs):
         #############################
         #
         #
-        # YOUR CODE HERE
+        #
         #
         #
         #############################
@@ -135,5 +139,10 @@ class BasicClientActor(BasicClientActorAbs):
 
 
 if __name__ == '__main__':
+    print("Choose which actor tag to use:")
+    actor_tag = input("Actor tag: ")
+    actor_level = int(input("Actor level: "))
     bsa = BasicClientActor(verbose=True)
+    bsa.actor_tag = actor_tag
+    bsa.actor_level = actor_level
     bsa.connect_to_server()
