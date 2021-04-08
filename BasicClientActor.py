@@ -52,6 +52,7 @@ class BasicClientActor(BasicClientActorAbs):
         self.board_size = game_params[0]
         self.actor = ANET(self.board_size)
         self.actor.load_anet(self.actor_tag, self.board_size, self.actor_level)
+        self.actor.model.eval()
 
         ##############################
 

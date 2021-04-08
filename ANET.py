@@ -66,7 +66,7 @@ class ANET(nn.Module):
         layers.append(torch.nn.Softmax(dim=-1))
         return layers
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor):
         """
         Take the given state and forward it through the network. Return the output of the network.
         :param x:  tensor([2., 1., 2., 1., 0., 0., 0., 2., 1., 0., 0., 2., 0., 2., 1., 0., 1.])
