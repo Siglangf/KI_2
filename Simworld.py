@@ -22,8 +22,8 @@ class Hex:
         self.board = Board(size)
         cells = self.board.cells
         # Defining owned sides of the board for each player
-        self.sides = {2: (
-            cells[0, :], cells[self.size-1, :]), 1: (cells[:, 0], cells[:, self.size-1])}
+        self.sides = {1: (
+            cells[0, :], cells[self.size-1, :]), 2: (cells[:, 0], cells[:, self.size-1])}
 
     def game_state(self):
         '''Returns 2 if current player has won, 1 if the games is over and it's draw, 0 if the games is not over'''
@@ -132,7 +132,7 @@ class Board:
     def __init__(self, size):
         self.size = size
         # Initializing cell objects
-        self.cells = np.array([[Cell(state=0, position=[i, j])
+        self.cells = np.array([[Cell(state=0, position=[j, i])
                                 for i in range(self.size)] for j in range(self.size)])
         self.connect_adjacent()
 
