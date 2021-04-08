@@ -122,15 +122,16 @@ class ANET(nn.Module):
         output /= sum
         return output
 
-    def save_anet(self, size, level):
+    def save_anet(self, series_name, size, level):
         torch.save(self.state_dict(),
-                   "models/{}_ANET_level_{}".format(size, level))
-        print("Model has been saved to models/{}_ANET_level_{}".format(size, level))
+                   "models/{}_{}_ANET_level_{}".format(series_name, size, level))
+        print("Model has been saved to models/{}_{}_ANET_level_{}".format(series_name, size, level))
 
-    def load_anet(self, size, level):
+    def load_anet(self, series_name, size, level):
         self.load_state_dict(torch.load(
-            "models/{}_ANET_level_{}".format(size, level)))
-        print("Loaded model from models/{}_ANET_level_{}".format(size, level))
+            "models/{}_{}_ANET_level_{}".format(series_name, size, level)))
+        print(
+            "Loaded model from models/{}_{}_ANET_level_{}".format(series_name, size, level))
 
 
 if __name__ == '__main__':
