@@ -23,11 +23,12 @@ TIE = 1
 
 
 class MCTS:
-    def __init__(self, game, anet, c=1, ANN=0):
+    def __init__(self, game, eps, anet, c=1, ANN=0):
         self.game = game
         self.root = None
         self.anet = anet
         self.c = c
+        self.eps = eps
 
     def set_root(self, node):
         """
@@ -84,7 +85,7 @@ class MCTS:
         """
         state = copy.deepcopy(node.state)  # make a copy of the current state
         while not state.is_final():
-            action = self.default_policy(state, eps=eps)
+            action = self.default_policy(state, eps=self.eps)
             state.step(action)
         return node, state.collect_reward()
 
