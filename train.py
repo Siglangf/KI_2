@@ -32,7 +32,7 @@ NUM_AGENTS = 5
 BATCH_SIZE = 0.3
 
 # ANET parameters
-HIDDEN_LAYERS = (64,32)
+HIDDEN_LAYERS = (64, 32)
 LEARNING_RATE = 0.01
 ACTIVATION = 'ReLU'
 OPTIMIZER = 'Adam'
@@ -76,52 +76,49 @@ def train_anet(series_name, anet, board_size, environment, episodes, num_simulat
                              strategy=batch_strategy, deg=BS_DEGREE)
         features = [replay[0] for replay in batch]
         labels = [replay[1] for replay in batch]
-        loss,accuracy = anet.fit(features, labels)
+        loss, accuracy = anet.fit(features, labels)
 
         if episode % (episodes//(num_agents-1)) == 0:
             anet.save_anet(series_name, board_size, episode)
-    with open(f"stats/log.txt",'a') as f:
-        stats = f"""\n\
-#########################################{series_name}#############################################\n\
-#######Default parameters#####\n\
+            log_training(board_size, episodes, num_simulations,
+                         num_agents, batch_size, loss, accuracy)
+
+
+def log_training(board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy):
+    with open(f"stats/log.txt", 'a') as f:
+        stats = f"\n\
+################################### {series_name} #############################################\n\
+# Default parameters\n\
 BOARD_SIZE ={board_size}\n\
 EPISODES = {episodes}\n\
 NUM_SIMULATIONS = {num_simulations}\n\
 NUM_AGENTS =  {num_agents}\n\
-BATCH_SIZE = {batch_size}\n\
-\n
-######ANET parameters#####\n\
+BATCH_SIZE = {batch_size}\n\n\
+# ANET parameters\n\
 HIDDEN_LAYERS = {HIDDEN_LAYERS}\n\
 LEARNING_RATE = {LEARNING_RATE}\n\
 ACTIVATION = {ACTIVATION}\n\
 OPTIMIZER = {OPTIMIZER}\n\
-EPOCHS = {EPOCHS}\n\
-\n
-#######MCTS parameters#####\n\
+EPOCHS = {EPOCHS}\n\n\
+# MCTS parameters\n\
 EPSILON = {EPSILON}\n\
 C = {C}\n\
-#######Batch strategy#####\n\
-BS_DEGREE = {BS_DEGREE}\n\
-
-Loss: {loss}
-Accuracy: {accuracy}
-"""
+# Batch strategy\n\
+BS_DEGREE = {BS_DEGREE}\n\n\
+# Results \n\
+Loss: {loss}\n\
+Accuracy: {accuracy}\n"
         f.write(stats)
 
 
-        
-
-
-
-def select_batch(replay_buffer, batch_size, strategy="random", upper_percent=0.8, upper_fraq=3/4, deg=3):
+def select_batch(replay_buffer, batch_size, strategy="probability_function", upper_percent=0.8, upper_fraq=3/4, deg=3):
     if strategy == "probability_function":
         # Choose based on probability function
         batch_size = math.ceil(batch_size*len(replay_buffer))
         probabilities = f(replay_buffer, deg)
-        batch_idx = list(set(random.choices([i for i in range(len(replay_buffer))], weights=probabilities, k=batch_size)))
+        batch_idx = np.random.choice(
+            [i for i in range(len(replay_buffer))], batch_size, p=probabilities)
         batch = [replay_buffer[i] for i in batch_idx]
-        print("Batch percentage: ", len(batch)/len(replay_buffer))
-        print(f'batch size {len(batch)}')
         return batch
 
 
@@ -151,11 +148,11 @@ if __name__ == '__main__':
 
     environment = Hex(board_size)
     batch_strategy = "probability_function"
-    
+
     anet = ANET(input_size=board_size, hidden_layers=HIDDEN_LAYERS,
                 lr=LEARNING_RATE, activation=ACTIVATION, optimizer=OPTIMIZER, EPOCHS=EPOCHS)
     if os.path.exists(f"models/{series_name}_{board_size}_ANET_level_{0}"):
-        anet.load_anet(series_name,board_size,episodes) 
-        series_name+="continued"
+        anet.load_anet(series_name, board_size, episodes)
+        series_name += "continued"
     train_anet(series_name, anet, board_size, environment, episodes, num_simulations,
                num_agents, batch_strategy, batch_size)
