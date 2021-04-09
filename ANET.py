@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from collections import OrderedDict
+import random
 # --------------------------------------------------------LOGIC--------------------------------------------------------
 
 
@@ -84,25 +85,33 @@ class ANET(nn.Module):
         """
         state = torch.FloatTensor(state)
         target = torch.FloatTensor(target)
+        
         for epoch in range(self.EPOCHS):
             self.optimizer.zero_grad()  # gradients will contain the loss, how wrong you were
             output = self.model(state)  # the prediction
             loss = self.loss_function(output, target)
             loss.backward()
             self.optimizer.step()
-        accuracy = output.argmax(dim=0).eq(
-            target.argmax(dim=0)).sum().numpy()/len(target)
+            accuracy = output.argmax(dim=1).eq(
+                target.argmax(dim=1)).sum().numpy()/len(target)
+            print("Loss: ", loss)
+            print("Accuracy: ",accuracy)
+        
         return loss, accuracy  # loss.item()
 
-    def get_move(self, state):
+    def get_move(self, state,choice="argmax"):
         """
         :param state:  game state, state = [2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 2, 1, 0, 1]
         :return: probability distribution of all legal actions, and index of the best action
         """
         state = torch.FloatTensor(state)
         D = self.get_action_probabilities(state)
-        action_index = torch.argmax(D).item()
-        return D, action_index
+        if choice=="argmax":
+            return D,torch.argmax(D).item()
+        dist = [w for w in D]
+        ind = [i for i in range(len(D))]
+        action_index = random.choices(ind,weights = dist,k=1)
+        return D, action_index[0]
 
     def get_action_probabilities(self, state: torch.Tensor):
         """
