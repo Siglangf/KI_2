@@ -80,11 +80,12 @@ def train_anet(series_name, anet, board_size, environment, episodes, num_simulat
 
         if episode % (episodes//(num_agents-1)) == 0:
             anet.save_anet(series_name, board_size, episode)
-        log_training(board_size, episodes, num_simulations,
-                     num_agents, batch_size, loss, accuracy)
+        print("hei")
+    log_training(series_name, board_size, episodes, num_simulations,
+                 num_agents, batch_size, loss, accuracy)
 
 
-def log_training(board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy):
+def log_training(series_name, board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy):
     with open(f"stats/log.txt", 'a') as f:
         stats = f"\n\
 ################################### {series_name} #############################################\n\
@@ -152,6 +153,7 @@ if __name__ == '__main__':
     anet = ANET(input_size=board_size, hidden_layers=HIDDEN_LAYERS,
                 lr=LEARNING_RATE, activation=ACTIVATION, optimizer=OPTIMIZER, EPOCHS=EPOCHS)
     if os.path.exists(f"models/{series_name}_{board_size}_ANET_level_{0}"):
+        # ! NOT TESTED YET
         anet.load_anet(series_name, board_size, episodes)
         series_name += "continued"
     train_anet(series_name, anet, board_size, environment, episodes, num_simulations,
