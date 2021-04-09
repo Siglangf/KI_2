@@ -152,6 +152,7 @@ if __name__ == '__main__':
     anet = ANET(input_size=board_size, hidden_layers=HIDDEN_LAYERS,
                 lr=LEARNING_RATE, activation=ACTIVATION, optimizer=OPTIMIZER, EPOCHS=EPOCHS)
     if os.path.exists(f"models/{series_name}_{board_size}_ANET_level_{0}"):
+        # ! NOT TESTED YET
         anet.load_anet(series_name, board_size, episodes)
         series_name += "continued"
     train_anet(series_name, anet, board_size, environment, episodes, num_simulations,
