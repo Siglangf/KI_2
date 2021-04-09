@@ -87,7 +87,7 @@ def train_anet(series_name, anet, board_size, environment, episodes, num_simulat
 def log_training(board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy):
     with open(f"stats/log.txt", 'a') as f:
         stats = f"\n\
-################################### {series_name}#############################################\n\
+################################### {series_name} #############################################\n\
 # Default parameters\n\
 BOARD_SIZE ={board_size}\n\
 EPISODES = {episodes}\n\
@@ -111,16 +111,14 @@ Accuracy: {accuracy}\n"
         f.write(stats)
 
 
-def select_batch(replay_buffer, batch_size, strategy="random", upper_percent=0.8, upper_fraq=3/4, deg=3):
+def select_batch(replay_buffer, batch_size, strategy="probability_function", upper_percent=0.8, upper_fraq=3/4, deg=3):
     if strategy == "probability_function":
         # Choose based on probability function
         batch_size = math.ceil(batch_size*len(replay_buffer))
         probabilities = f(replay_buffer, deg)
-        batch_idx = list(set(random.choices(
-            [i for i in range(len(replay_buffer))], weights=probabilities, k=batch_size)))
+        batch_idx = np.random.choice(
+            [i for i in range(len(replay_buffer))], batch_size, p=probabilities)
         batch = [replay_buffer[i] for i in batch_idx]
-        print("Batch percentage: ", len(batch)/len(replay_buffer))
-        print(f'batch size {len(batch)}')
         return batch
 
 
