@@ -80,11 +80,12 @@ def train_anet(series_name, anet, board_size, environment, episodes, num_simulat
 
         if episode % (episodes//(num_agents-1)) == 0:
             anet.save_anet(series_name, board_size, episode)
-        log_training(board_size, episodes, num_simulations,
-                     num_agents, batch_size, loss, accuracy)
+        print("hei")
+    log_training(series_name, board_size, episodes, num_simulations,
+                 num_agents, batch_size, loss, accuracy)
 
 
-def log_training(board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy):
+def log_training(series_name, board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy):
     with open(f"stats/log.txt", 'a') as f:
         stats = f"\n\
 ################################### {series_name} #############################################\n\
