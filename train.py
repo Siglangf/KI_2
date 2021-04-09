@@ -47,7 +47,7 @@ BS_DEGREE = 5
 # --------------------------------------------------------LOGIC---------------------------------------------------------
 
 
-def train_anet(series_name, anet, board_size, environment, episodes, num_simulations, num_agents, batch_strategy, batch_size):
+def train_anet(series_name, anet, board_size, environment, episodes, num_simulations, num_agents, batch_strategy, batch_size, log=True):
     replay_buffer = []
     action_space = environment.get_action_space()
     anet.save_anet(series_name, board_size, 0)
@@ -80,8 +80,8 @@ def train_anet(series_name, anet, board_size, environment, episodes, num_simulat
 
         if episode % (episodes//(num_agents-1)) == 0:
             anet.save_anet(series_name, board_size, episode)
-            log_training(board_size, episodes, num_simulations,
-                         num_agents, batch_size, loss, accuracy)
+        log_training(board_size, episodes, num_simulations,
+                     num_agents, batch_size, loss, accuracy)
 
 
 def log_training(board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy):
