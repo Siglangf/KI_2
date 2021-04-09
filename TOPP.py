@@ -6,7 +6,8 @@ import itertools
 
 class TOPP:
 
-    def __init__(self, series_name, board_size, game, num_games, episodes, num_agents):
+    def __init__(self, series_name, board_size, game, num_games, episodes, num_agents,hidden_layers):
+        self.hidden_layers = hidden_layers
         self.board_size = board_size
         self.game = game
         self.agents = self.load_agents(series_name, episodes, num_agents)
@@ -19,8 +20,8 @@ class TOPP:
         """
         players = []
         for num_games_trained in range(0, episodes+1, int(episodes/(num_agents-1))):
-
-            anet = ANET(self.board_size)
+            
+            anet = ANET(input_size=self.board_size,hidden_layers=self.hidden_layers)
             anet.load_anet(series_name,
                            self.board_size, num_games_trained)
             anet.model.eval()
