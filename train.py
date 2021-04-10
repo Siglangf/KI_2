@@ -18,6 +18,7 @@ import time
 import math
 import sys
 import os
+from TOPP import TOPP
 
 
 # --------------------------------------------------------DEFAULT PARAMS---------------------------------------------------------
@@ -25,11 +26,11 @@ import os
 # Default parameters
 GAME = Hex
 STARTING_PLAYER_ID = 1
-SIZE = 4
-EPISODES = 20
+BOARD_SIZE = 4
+EPISODES = 50
 NUM_SIMULATIONS = 1000
 NUM_AGENTS = 5
-BATCH_SIZE = 0.3
+BATCH_SIZE = 100
 
 # ANET parameters
 HIDDEN_LAYERS = (64, 32)
@@ -39,10 +40,14 @@ OPTIMIZER = 'Adam'
 EPOCHS = 20
 
 # MCTS parameters
-EPSILON = 0.8
-C = 1
+EPSILON = 0.4
+C = 1.5
 # Batch strategy
+BATCH_TYPE_RELATIVE = False
 BS_DEGREE = 5
+
+# Topp parameters
+NUM_GAMES = 100
 
 # --------------------------------------------------------LOGIC---------------------------------------------------------
 
@@ -73,22 +78,29 @@ def train_anet(series_name, anet, board_size, environment, episodes, num_simulat
             root = new_root
             board_mcts.set_root(root)
         batch = select_batch(replay_buffer, batch_size,
-                             strategy=batch_strategy, deg=BS_DEGREE)
+                             strategy=batch_strategy, deg=BS_DEGREE, batch_type_relative=BATCH_TYPE_RELATIVE)
         features = [replay[0] for replay in batch]
         labels = [replay[1] for replay in batch]
         loss, accuracy = anet.fit(features, labels)
 
         if episode % (episodes//(num_agents-1)) == 0:
             anet.save_anet(series_name, board_size, episode)
-        print("hei")
+
+    topp = TOPP(series_name=series_name, board_size=board_size, game=Hex,
+                num_games=NUM_GAMES, episodes=episodes, num_agents=num_agents, hidden_layers=HIDDEN_LAYERS)
+    wins = topp.run_tournament()
     log_training(series_name, board_size, episodes, num_simulations,
-                 num_agents, batch_size, loss, accuracy)
+                 num_agents, batch_size, loss, accuracy, wins)
 
 
-def log_training(series_name, board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy):
+def log_training(series_name, board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy, wins=[]):
+    total = sum(wins)
+    wins = [number/total for number in wins]
+    winstring = "\n".join(
+        [f"Win {i}: {score}" for i, score in enumerate(wins)])
     with open(f"stats/log.txt", 'a') as f:
         stats = f"\n\
-################################### {series_name} #############################################\n\
+############################################ {series_name} #############################################\n\
 # Default parameters\n\
 BOARD_SIZE ={board_size}\n\
 EPISODES = {episodes}\n\
@@ -108,14 +120,22 @@ C = {C}\n\
 BS_DEGREE = {BS_DEGREE}\n\n\
 # Results \n\
 Loss: {loss}\n\
-Accuracy: {accuracy}\n"
-        f.write(stats)
+Accuracy: {accuracy}\n\
+# Win percentages of agents\n\
+ {winstring}"
+        f. write(stats)
 
 
-def select_batch(replay_buffer, batch_size, strategy="probability_function", upper_percent=0.8, upper_fraq=3/4, deg=3):
+def select_batch(replay_buffer, batch_size, strategy="probability_function",  deg=3, batch_type_relative=True):
+    if batch_type_relative:
+        if batch_size > 1 or batch_size < 0:
+            raise ValueError(
+                "If batchsize is relative it must be number between 0 and 1.")
+        batch_size = math.ceil(batch_size*len(replay_buffer))
+    elif batch_size > len(replay_buffer):
+        return replay_buffer
     if strategy == "probability_function":
         # Choose based on probability function
-        batch_size = math.ceil(batch_size*len(replay_buffer))
         probabilities = f(replay_buffer, deg)
         batch_idx = np.random.choice(
             [i for i in range(len(replay_buffer))], batch_size, p=probabilities)
@@ -141,7 +161,7 @@ if __name__ == '__main__':
         batch_size = float(input("Batch size: "))
     else:
         series_name = input("Series Name: ")
-        board_size = SIZE
+        board_size = BOARD_SIZE
         episodes = EPISODES
         num_simulations = NUM_SIMULATIONS
         num_agents = NUM_AGENTS

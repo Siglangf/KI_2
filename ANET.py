@@ -12,7 +12,7 @@ import random
 
 class ANET(nn.Module):
 
-    def __init__(self, input_size=None, output_size=None, hidden_layers=(60, 30, 20), lr=0.001, activation='ReLU', optimizer='Adam', EPOCHS=20):
+    def __init__(self, input_size=None, output_size=None, hidden_layers=(60, 30, 20), lr=0.001, activation='ReLU', optimizer='Adam', EPOCHS=20, loss_function="binary_cross_entropy"):
         super(ANET, self).__init__()  # inherit from super()
 
         self.EPOCHS = EPOCHS
@@ -25,7 +25,7 @@ class ANET(nn.Module):
         self.model = nn.Sequential(*self.layers)
         self.optimizer = self.get_optimizer(optimizer)
         # self.loss_function = nn.CrossEntropyLoss()
-        self.loss_function = torch.nn.BCELoss(reduction="mean")
+        self.loss_function = self.get_loss_function(loss_function)
 
     def get_activation_func(self, activation):
         activation_functions = {
@@ -45,6 +45,12 @@ class ANET(nn.Module):
             "Adam": torch.optim.Adam(list(self.parameters()), lr=self.lr)
         }
         return optimizers[optimizer]
+
+    def get_loss_function(self, loss_fn):
+        loss_function = {
+            "binary_cross_entropy": torch.nn.BCELoss(reduction="mean")
+        }
+        return loss_function[loss_fn]
 
     def get_layers(self, hidden_layers, activation_function):
         """
@@ -85,7 +91,7 @@ class ANET(nn.Module):
         """
         state = torch.FloatTensor(state)
         target = torch.FloatTensor(target)
-        
+
         for epoch in range(self.EPOCHS):
             self.optimizer.zero_grad()  # gradients will contain the loss, how wrong you were
             output = self.model(state)  # the prediction
@@ -95,22 +101,22 @@ class ANET(nn.Module):
             accuracy = output.argmax(dim=1).eq(
                 target.argmax(dim=1)).sum().numpy()/len(target)
             print("Loss: ", loss)
-            print("Accuracy: ",accuracy)
-        
+            print("Accuracy: ", accuracy)
+
         return loss, accuracy  # loss.item()
 
-    def get_move(self, state,choice="argmax"):
+    def get_move(self, state, choice="argmax1"):
         """
         :param state:  game state, state = [2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 2, 1, 0, 1]
         :return: probability distribution of all legal actions, and index of the best action
         """
         state = torch.FloatTensor(state)
         D = self.get_action_probabilities(state)
-        if choice=="argmax":
-            return D,torch.argmax(D).item()
+        if choice == "argmax":
+            return D, torch.argmax(D).item()
         dist = [w for w in D]
         ind = [i for i in range(len(D))]
-        action_index = random.choices(ind,weights = dist,k=1)
+        action_index = random.choices(ind, weights=dist, k=1)
         return D, action_index[0]
 
     def get_action_probabilities(self, state: torch.Tensor):
