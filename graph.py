@@ -19,13 +19,13 @@ class Node:
         # parent kan gi oss litt problemer siden vi hele tiden har en ny rot...
         self.parent = None
         self.children = []  # A lookup of legal child positions
-        # The board state as this node, ex. for NIM number of pices left on the board.
-        self.state = state
+        
+        self.state = state # The board state as this node
         self.pred_action = pred_action  # Store the action which led to the node
         # self.to_play = to_play # The player whose turn it is. (1 or -1)
 
-        # N(s) = number of times this state was visited during MCTS. "Good" are visited more then "bad" states.
-        self.visit_count = 0
+        
+        self.visit_count = 0 # Number of times this state is visited during MCTS. "Good" are visited more then "bad" states.
         self.value_sum = 0  # The total value of this state from all visits
 
         self.node_id = Node.counter
