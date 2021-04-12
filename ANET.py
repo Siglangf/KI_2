@@ -58,7 +58,7 @@ class ANET(nn.Module):
         """
         layers = [torch.nn.Linear(self.input_size, hidden_layers[0])]  # arg: (in_layer_size, out_layer_size)
         # During training, randomly zeroes some of the elements of the input tensor
-        layers.append(torch.nn.Dropout(0.5))
+        layers.append(torch.nn.Dropout(0.3))
         layers.append(activation_function) 
         for i in range(len(hidden_layers) - 1):
             layers.append(torch.nn.Linear(hidden_layers[i], hidden_layers[i+1]))
