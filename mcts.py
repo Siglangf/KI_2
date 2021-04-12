@@ -16,11 +16,6 @@ import networkx as nx
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# --------------------------------------------------------CONSTANTS----------------------------------------------------------
-WIN = 2
-TIE = 1
-# ----------------------------------------------------------LOGIC------------------------------------------------------------
-
 
 class MCTS:
     def __init__(self, eps, anet, c=1, ANN=0):
@@ -77,14 +72,14 @@ class MCTS:
             children_nodes.append(child_node)
         node.add_children(children_nodes)
 
-    def rollout(self, node, eps=0.7, ANN=None):
+    def rollout(self, node, ANN=None):
         """
         Play a game (rollout game) from node using the default policy.
         : return: node, reward
         """
         state = copy.deepcopy(node.state)  # make a copy of the current state
         while not state.is_final():
-            action = self.default_policy(state, eps=self.eps)
+            action = self.default_policy(state)
             state.step(action)
         return node, state.collect_reward()
 
@@ -96,14 +91,14 @@ class MCTS:
             self.backup(node.parent, reward)
 
     # ToDo: Should use more rollouts in the beginning and then the critic more towards the end
-    def default_policy(self, state, ANN=0, eps=1, stoch=True):
+    def default_policy(self, state, ANN=0):
         """
         : eps: During rollouts, the default policy may have a probability (ε) of choosing a random move rather than the best (so far) move.
         : state: state of the current game
         : return: action
         """
         actions = state.legal_actions()
-        if random.random() < eps:
+        if random.random() < self.eps:
             return random.choice(actions)
         else:
             """

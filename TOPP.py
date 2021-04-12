@@ -2,6 +2,7 @@ from ANET import ANET
 from Simworld import Hex
 import random
 import itertools
+import numpy as np
 
 
 class TOPP:
@@ -29,7 +30,7 @@ class TOPP:
             players.append(anet)
         return players
 
-    def single_game(self, actors, choice="argmax"):
+    def single_game(self, actors, greedy):
         """
         Plays one single game
         :param: actors = {1: p1, 2: p2}
@@ -41,9 +42,13 @@ class TOPP:
         action_space = single_game.get_action_space()
         while not single_game.is_final():
             current_state = single_game.get_state()
-            D, action_index = self.agents[actors[player]].get_move(
-                current_state, choice)
+            D, action_index = self.agents[actors[player]].get_move(current_state)
             action = action_space[action_index]
+
+            if not greedy:
+                D /= np.sum(D)
+                action_index = np.random.choice(len(D), 1, p=D)[0]
+                action = action_space[action_index]
 
             single_game.step(action)
             player = single_game.player
@@ -52,7 +57,7 @@ class TOPP:
         print(f"Player {actors[winner]} won player {actors[loser]}")
         return actors[winner]
 
-    def run_tournament(self, choice="argmax"):
+    def run_tournament(self, greedy = False):
         """
         Performs a round robin tournament
         """
@@ -61,6 +66,6 @@ class TOPP:
         for player1, player2 in opponents:
             for _ in range(self.num_games):
                 actors = {1: player1, 2: player2}
-                winner = self.single_game(actors, choice)
+                winner = self.single_game(actors, greedy)
                 wins[winner] += 1
         return wins

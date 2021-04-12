@@ -27,70 +27,94 @@ from TOPP import TOPP
 GAME = Hex
 STARTING_PLAYER_ID = 1
 BOARD_SIZE = 4
-EPISODES = 50
-NUM_SIMULATIONS = 1000
-NUM_AGENTS = 5
-BATCH_SIZE = 100
+EPISODES = 200
+NUM_SIMULATIONS = 2000
+NUM_AGENTS = 15
+BATCH_SIZE = 0.5
 
 # ANET parameters
-HIDDEN_LAYERS = (64, 32)
+HIDDEN_LAYERS = (32,32) # (48,24)
 LEARNING_RATE = 0.01
-ACTIVATION = 'ReLU'
+ACTIVATION = 'Tanh'
 OPTIMIZER = 'Adam'
-EPOCHS = 20
+EPOCHS = 1
 
 # MCTS parameters
-EPSILON = 0.4
-C = 1.5
+EPSILON = 1
+C = 1
 # Batch strategy
-BATCH_TYPE_RELATIVE = False
-BS_DEGREE = 5
-
-# Topp parameters
-NUM_GAMES = 100
+BATCH_TYPE_RELATIVE = True
+BS_DEGREE = 3
 
 # --------------------------------------------------------LOGIC---------------------------------------------------------
 
 
-def train_anet(series_name, anet, board_size, environment, episodes, num_simulations, num_agents, batch_strategy, batch_size, log=True):
-    replay_buffer = []
-    action_space = environment.get_action_space()
+def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_simulations, num_agents, batch_strategy, batch_size, eps, log=True):
+    train_losses = []
+    train_accuracies = []
+    # CLEAR REPLAY BUFFER
+    rbuf = []
+    action_space = board_actual_game.get_action_space()
     anet.save_anet(series_name, board_size, 0)
+    # FOR EACH EPISODE/ACTUAL GAME
     for episode in tqdm(range(1, episodes+1)):
-        # Initialize environment
-        environment.reset()
-        is_final = environment.is_final()
-        # Initialize mcts
-        root = Node(environment)
-        board_mcts = MCTS(EPSILON, anet, C)
-        is_final = environment.is_final()
+        # INITIALIZE ACTUAL GAME BOARD to empty board
+        board_actual_game.reset()
+        is_final = board_actual_game.is_final()
+        # INITIALIZE MCT to a single root
+        board_mcts = MCTS(eps, anet, C)
+        root = Node(board_actual_game)
+        # FOR EACH STEP IN EPISODE/ACTUAL GAME
         while not is_final:
             board_mcts.set_root(root)
             board_mcts.run_simulations(num_simulations)
-            D, new_root = board_mcts.get_probability_distribution(
-                board_mcts.root, action_space)
-            state = environment.get_state()
-            replay_buffer.append((state, D))
+            D, new_root = board_mcts.get_probability_distribution(board_mcts.root, action_space)
+            # ADD CASE TO RBUF, (F,D) where F is the feature set consisting of PID and board state, D is the target distribution
+            feature = board_actual_game.get_state()
+            rbuf.append((feature, D))
             action = action_space[np.argmax(D)]
-            # Perform the action in the actual environment
-            state, _, is_final = environment.step(action)
-            # Update root of MCST to be the choosen childstate
+            # PERFOM ACTION IN ACTUAL GAME
+            _, _, is_final = board_actual_game.step(action)
+            # SET NEW ROOT IN MCT
             root = new_root
-            board_mcts.set_root(root)
-        batch = select_batch(replay_buffer, batch_size,
-                             strategy=batch_strategy, deg=BS_DEGREE, batch_type_relative=BATCH_TYPE_RELATIVE)
+
+        # TRAIN ANET ON RANDOM MINIBATCH 
+        batch = select_batch(rbuf, batch_size, strategy = batch_strategy, deg = BS_DEGREE, batch_type_relative = BATCH_TYPE_RELATIVE)
         features = [replay[0] for replay in batch]
         labels = [replay[1] for replay in batch]
-        loss, accuracy = anet.fit(features, labels)
-
+        loss, acc = anet.fit(features, labels)
+        train_losses.append(loss)
+        train_accuracies.append(acc)
+        # DECAY EPSILON
+        eps *= 0.95
+        # SAVE ANET
         if episode % (episodes//(num_agents-1)) == 0:
             anet.save_anet(series_name, board_size, episode)
+    
+    plot(train_accuracies, train_losses, board_size, num_simulations)
 
-    topp = TOPP(series_name=series_name, board_size=board_size, game=Hex,
-                num_games=NUM_GAMES, episodes=episodes, num_agents=num_agents, hidden_layers=HIDDEN_LAYERS)
-    wins = topp.run_tournament()
-    log_training(series_name, board_size, episodes, num_simulations,
-                 num_agents, batch_size, loss, accuracy, wins)
+    # topp = TOPP(series_name=series_name, board_size=board_size, game=Hex, num_games=NUM_GAMES, episodes=episodes, num_agents=num_agents, hidden_layers=HIDDEN_LAYERS)
+    # wins = topp.run_tournament()
+    # log_training(series_name, board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy, wins)
+
+def plot(train_accuracies, train_losses, board_size, simulations):
+        x = np.arange(len(train_accuracies))
+        fig = plt.figure(figsize=(12,5))
+        title = 'Size: {}   Simulations: {} '.format(board_size, simulations)
+        fig.suptitle(title, fontsize=10)
+        gs = fig.add_gridspec(1, 2)
+        ax = fig.add_subplot(gs[0,0])
+        ax.set_title("Accuracy")
+        ax.plot(x, train_accuracies, color='tab:green', label="Train")
+        plt.grid()
+        plt.legend()
+        ax = fig.add_subplot(gs[0,1])
+        ax.set_title("Loss")
+        ax.plot(x, train_losses, color='tab:orange', label="Train")
+        plt.legend()
+        plt.grid()
+        plt.savefig("stats/size-{}".format(board_size))
+        plt.close()
 
 
 def log_training(series_name, board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy, wins=[]):
@@ -159,6 +183,7 @@ if __name__ == '__main__':
         num_simulations = int(input("Number of simulations: "))
         num_agents = int(input("Number of agents: "))
         batch_size = float(input("Batch size: "))
+        eps = float(input("Epsilon for rollout: "))
     else:
         series_name = input("Series Name: ")
         board_size = BOARD_SIZE
@@ -166,15 +191,17 @@ if __name__ == '__main__':
         num_simulations = NUM_SIMULATIONS
         num_agents = NUM_AGENTS
         batch_size = BATCH_SIZE
+        eps = EPSILON
 
-    environment = Hex(board_size)
+    board_actual_game = Hex(board_size)
     batch_strategy = "probability_function"
 
     anet = ANET(input_size=board_size, hidden_layers=HIDDEN_LAYERS,
                 lr=LEARNING_RATE, activation=ACTIVATION, optimizer=OPTIMIZER, EPOCHS=EPOCHS)
+ 
     if os.path.exists(f"models/{series_name}_{board_size}_ANET_level_{0}"):
         # ! NOT TESTED YET
         anet.load_anet(series_name, board_size, episodes)
         series_name += "continued"
-    train_anet(series_name, anet, board_size, environment, episodes, num_simulations,
-               num_agents, batch_strategy, batch_size)
+    train_anet(series_name, anet, board_size, board_actual_game, episodes, num_simulations,
+               num_agents, batch_strategy, batch_size, eps)

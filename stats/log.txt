@@ -1,0 +1,214 @@
+
+#########################################testing#############################################
+#######Default parameters#####
+BOARD_SIZE =4
+EPISODES = 10
+NUM_SIMULATIONS = 10
+NUM_AGENTS =  2
+BATCH_SIZE = 0.6
+
+
+######ANET parameters#####
+HIDDEN_LAYERS = (64, 32)
+LEARNING_RATE = 0.01
+ACTIVATION = ReLU
+OPTIMIZER = Adam
+EPOCHS = 20
+
+
+#######MCTS parameters#####
+EPSILON = 0.8
+C = 1
+#######Batch strategy#####
+BS_DEGREE = 5
+
+Loss: 0.19309532642364502
+Accuracy: 0.08571428571428572
+
+#########################################testing2#############################################
+#######Default parameters#####
+BOARD_SIZE =4
+EPISODES = 10
+NUM_SIMULATIONS = 10
+NUM_AGENTS =  2
+BATCH_SIZE = 0.6
+
+
+######ANET parameters#####
+HIDDEN_LAYERS = (64, 32)
+LEARNING_RATE = 0.01
+ACTIVATION = ReLU
+OPTIMIZER = Adam
+EPOCHS = 20
+
+
+#######MCTS parameters#####
+EPSILON = 0.8
+C = 1
+#######Batch strategy#####
+BS_DEGREE = 5
+
+Loss: 0.19439657032489777
+Accuracy: 0.2
+
+#########################################acctest#############################################
+#######Default parameters#####
+BOARD_SIZE =4
+EPISODES = 10
+NUM_SIMULATIONS = 10
+NUM_AGENTS =  2
+BATCH_SIZE = 0.6
+
+
+######ANET parameters#####
+HIDDEN_LAYERS = (64, 32)
+LEARNING_RATE = 0.01
+ACTIVATION = ReLU
+OPTIMIZER = Adam
+EPOCHS = 20
+
+
+#######MCTS parameters#####
+EPSILON = 0.8
+C = 1
+#######Batch strategy#####
+BS_DEGREE = 5
+
+Loss: 0.1906241476535797
+Accuracy: 0.2727272727272727
+
+################################### nattkjoring #############################################
+# Default parameters
+BOARD_SIZE =4
+EPISODES = 300
+NUM_SIMULATIONS = 2000
+NUM_AGENTS =  5
+BATCH_SIZE = 0.3
+
+# ANET parameters
+HIDDEN_LAYERS = (64, 32)
+LEARNING_RATE = 0.01
+ACTIVATION = ReLU
+OPTIMIZER = Adam
+EPOCHS = 20
+
+# MCTS parameters
+EPSILON = 0.8
+C = 1
+# Batch strategy
+BS_DEGREE = 4
+
+# Results 
+Loss: 0.17185667157173157
+Accuracy: 0.5214646464646465
+
+################################### learningrate #############################################
+# Default parameters
+BOARD_SIZE =4
+EPISODES = 200
+NUM_SIMULATIONS = 2000
+NUM_AGENTS =  5
+BATCH_SIZE = 0.3
+
+# ANET parameters
+HIDDEN_LAYERS = (64, 32)
+LEARNING_RATE = 0.001
+ACTIVATION = ReLU
+OPTIMIZER = Adam
+EPOCHS = 20
+
+# MCTS parameters
+EPSILON = 1
+C = 1
+# Batch strategy
+BS_DEGREE = 4
+
+# Results 
+Loss: 0.17132383584976196
+Accuracy: 0.5157116451016636
+
+################################### simulations5000 #############################################
+# Default parameters
+BOARD_SIZE =4
+EPISODES = 200
+NUM_SIMULATIONS = 5000
+NUM_AGENTS =  5
+BATCH_SIZE = 0.3
+
+# ANET parameters
+HIDDEN_LAYERS = (64, 32)
+LEARNING_RATE = 0.05
+ACTIVATION = ReLU
+OPTIMIZER = Adam
+EPOCHS = 20
+
+# MCTS parameters
+EPSILON = 1
+C = 1
+# Batch strategy
+BS_DEGREE = 4
+
+# Results 
+Loss: 0.2190484255552292
+Accuracy: 0.1701720841300191
+
+############################################ lalala #############################################
+# Default parameters
+BOARD_SIZE =5
+EPISODES = 200
+NUM_SIMULATIONS = 2000
+NUM_AGENTS =  5
+BATCH_SIZE = 100
+
+# ANET parameters
+HIDDEN_LAYERS = (25, 25)
+LEARNING_RATE = 0.05
+ACTIVATION = ReLU
+OPTIMIZER = Adam
+EPOCHS = 20
+
+# MCTS parameters
+EPSILON = 1
+C = 1
+# Batch strategy
+BS_DEGREE = 1
+
+# Results 
+Loss: 0.16641594469547272
+Accuracy: 0.07
+# Win percentages of agents
+ Win 0: 0.15
+Win 1: 0.2
+Win 2: 0.1
+Win 3: 0.2
+Win 4: 0.35
+############################################ fakkkk #############################################
+# Default parameters
+BOARD_SIZE =5
+EPISODES = 200
+NUM_SIMULATIONS = 2000
+NUM_AGENTS =  5
+BATCH_SIZE = 100
+
+# ANET parameters
+HIDDEN_LAYERS = (25, 25)
+LEARNING_RATE = 0.05
+ACTIVATION = ReLU
+OPTIMIZER = Adam
+EPOCHS = 20
+
+# MCTS parameters
+EPSILON = 0.5
+C = 1
+# Batch strategy
+BS_DEGREE = 1
+
+# Results 
+Loss: 0.16652487218379974
+Accuracy: 0.07
+# Win percentages of agents
+ Win 0: 0.05
+Win 1: 0.25
+Win 2: 0.3
+Win 3: 0.15
+Win 4: 0.25
