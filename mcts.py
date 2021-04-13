@@ -33,6 +33,7 @@ class MCTS:
         self.root = node
 
     def run_simulations(self, num_simulations=4):
+        # ?: Try this in stead?
         if self.root.visit_count == 0:
             self.expand(self.root)
 
@@ -42,8 +43,8 @@ class MCTS:
             # EXPAND / ROLLOUT
             if leaf_node.visit_count > 0 and not leaf_node.state.is_final():
                 self.expand(leaf_node)
-                child_state = random.choice(leaf_node.children)
-                child = self.state_to_node[child_state]
+                child_state_tuple = random.choice(leaf_node.children)
+                child = self.state_to_node[child_state_tuple]
                 reward = self.rollout(child)
             else:
                 reward = self.rollout(leaf_node)
@@ -74,10 +75,11 @@ class MCTS:
             # make a copy of the current state
             child_state = copy.deepcopy(node.state)
             child_state.step(action)  # update the current state
-            children_states.append(child_state)
-            if child_state not in self.state_to_node.keys():
+            child_state_tuple = child_state.get_state_as_tuple()
+            children_states.append(child_state_tuple)
+            if child_state_tuple not in self.state_to_node.keys():
                 child_node = Node(child_state, action)
-                self.state_to_node[child_state] = child_node
+                self.state_to_node[child_state_tuple] = child_node
         node.add_children(children_states)
 
     def rollout(self, node):
@@ -125,8 +127,8 @@ class MCTS:
         """
         children_stack = {}
         c = self.c if node.state.player == 1 else -self.c
-        for child_state in node.children:
-            child = self.state_to_node[child_state]
+        for child_state_tuple in node.children:
+            child = self.state_to_node[child_state_tuple]
             children_stack[child] = child.compute_q() + \
                 child.compute_u(node, c)
         return max(children_stack, key=children_stack.get) if node.state.player == 1 else min(children_stack, key=children_stack.get)
@@ -140,13 +142,20 @@ class MCTS:
         total = sum(
             self.state_to_node[child_state].visit_count for child_state in node.children)
         D = np.zeros(len(action_space))
-        child_dict = {}
+        board_state = node.state.get_state()
+        child_stack = {}
         for child_state in node.children:
             child = self.state_to_node[child_state]
-            D[action_space[child.pred_action]] = child.visit_count/total
-            child_dict[child] = child.visit_count/total
+            index = self.states_to_actionindex(
+                board_state, child.state.get_state())
+            D[index] = child.visit_count/total
+            child_stack[child] = child.visit_count/total
+        argmax_child = max(child_stack, key=child_stack.get)
+        return D, argmax_child
 
-        return D, max(child_dict, key=child_dict.get)
+    def states_to_actionindex(self, state1, state2):
+        diff = state1[1:]-state2[1:]
+        return np.nonzero(diff)
 
 
 if __name__ == '__main__':
