@@ -14,7 +14,7 @@ import copy
 class State:
     def __init__(self, board: int, player: int):
         self.board = board
-        self.player = player #to_play
+        self.player = player  # to_play
 
     def legal_actions(self):
         pass
@@ -45,12 +45,17 @@ class NimState(State):
     def legal_actions(self):
         return [x for x in range(1, min(self.board, self.K) + 1)]
 
+    def get_action_space(self):
+        '''Returns all actions for all states as a dictionary which maps a unique index to each action'''
+        return {i: i+1 for i in range(self.K)}
+
     # game is over when there are no pices left, aka. N = 0
+
     def is_final(self):
         return self.board == 0
 
     # return 0 if not ended, 1 if player 1 wins, -1 if player 1 lost
-    def collect_reward(self): 
+    def collect_reward(self):
         if self.get_winner() == 1:
             return 1
         elif self.get_winner() == 2:
@@ -61,18 +66,20 @@ class NimState(State):
     def game_state(self):
         return 2
 
+    def get_state(self):
+        return self.board
+
     # move: number of pices to remove
     def step(self, move):
         self.board = self.board - move
         self.player = 1 if self.player == 2 else 2
+        return self.board, self.collect_reward(), self.is_final()
 
     def get_winner(self):
         if not self.is_final():
             return None
         else:
             return 1 if self.player == 2 else 2
-            
 
     def __repr__(self):
         return f'Number of pices left is {self.board} and player {1 if self.player else 2}\'s turn'
-

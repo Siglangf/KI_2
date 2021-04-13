@@ -4,7 +4,7 @@ from random import randint
 import numpy as np
 NEIGHBOAR_MAPPING = {(0, 1): 'UP', (0, -1): 'DOWN', (-1, 0): 'LEFT',
                      (1, 0): 'RIGHT', (-1, 1): 'LEFT_DIAG', (1, -1): 'RIGHT_DIAG'}
-COLOR_MAP = {0: "white", 1: "blue", 2: "red"}
+COLOR_MAP = {0: "white", 1: "red", 2: "black"}
 
 
 class Action:
@@ -15,7 +15,7 @@ class Action:
 
 
 class Hex:
-    def __init__(self, size):
+    def __init__(self, size, start_player=1):
         self.size = size
         # Player one represented as 1 and player two represented as 2
         self.player = 1
@@ -64,6 +64,11 @@ class Hex:
                 return True
         return False
 
+    def get_winner(self):
+        if self.is_final():
+            return self.player
+        print("Game is not finished")
+
     def collect_reward(self, game_state=None):
         if game_state == None:
             game_state = self.game_state()
@@ -81,6 +86,11 @@ class Hex:
         action_space = tuple([action.action_tuple for action in action_space])
         return action_space
 
+    def get_action_space(self):
+        empty_game = Hex(self.size, self.player)
+        actions = empty_game.legal_actions()
+        return {i: actions[i] for i in range(len(actions))}
+
     def step(self, action):
         action_cell = self.board.cell_from_position(action)
         action_cell.state = self.player
@@ -95,7 +105,9 @@ class Hex:
         return None
 
     def get_state(self):
-        return self.board.to_tuple()
+        board_flattened = np.hstack(self.board.to_tuple())
+        state = np.insert(board_flattened, 0, self.player)
+        return state
 
     def reset(self):
         self.__init__(self.size)
@@ -120,7 +132,7 @@ class Board:
     def __init__(self, size):
         self.size = size
         # Initializing cell objects
-        self.cells = np.array([[Cell(state=0, position=[i, j])
+        self.cells = np.array([[Cell(state=0, position=[j, i])
                                 for i in range(self.size)] for j in range(self.size)])
         self.connect_adjacent()
 
@@ -178,6 +190,18 @@ def visualize_state(environment, show_labels=False):
     fig = plt.figure()
     nx.draw(G, pos=positions, ax=fig.add_subplot(),
             node_color=colors, with_labels=show_labels)
+
+    fig = plt.figure(1)
+    fig.axes[0].annotate('Player 2', xy=(0.26, 0.76),  xycoords='axes fraction',
+                         xytext=(0.1, 0.99), textcoords='axes fraction',
+                         arrowprops=dict(facecolor='black', shrink=0.1),
+                         horizontalalignment='right', verticalalignment='top',
+                         )
+    fig.axes[0].annotate('Player 1', xy=(0.73, 0.76),  xycoords='axes fraction',
+                         xytext=(0.99, 0.99), textcoords='axes fraction',
+                         arrowprops=dict(facecolor='red', shrink=0.1),
+                         horizontalalignment='right', verticalalignment='top',
+                         )
     plt.close()
     if environment.is_final():
         if environment.player == 1:
