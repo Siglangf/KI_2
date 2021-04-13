@@ -50,7 +50,7 @@ class ANET(nn.Module):
         loss_function = {
             "binary_cross_entropy": torch.nn.BCELoss(reduction="mean"),
             "mse": torch.nn.MSELoss(),
-            "kldiv":torch.nn.KLDivLoss(reduction="batchmean")
+            "kldiv": torch.nn.KLDivLoss(reduction="batchmean")
         }
         return loss_function[loss_fn]
 
@@ -58,13 +58,15 @@ class ANET(nn.Module):
         """
         Generate all layers.
         """
-        layers = [torch.nn.Linear(self.input_size, hidden_layers[0])]  # arg: (in_layer_size, out_layer_size)
+        layers = [torch.nn.Linear(
+            self.input_size, hidden_layers[0])]  # arg: (in_layer_size, out_layer_size)
         # During training, randomly zeroes some of the elements of the input tensor
         layers.append(torch.nn.Dropout(0.3))
-        layers.append(activation_function) 
+        layers.append(activation_function)
         for i in range(len(hidden_layers) - 1):
-            layers.append(torch.nn.Linear(hidden_layers[i], hidden_layers[i+1]))
-            layers.append(activation_function) 
+            layers.append(torch.nn.Linear(
+                hidden_layers[i], hidden_layers[i+1]))
+            layers.append(activation_function)
         # Should output a probability distribution over all possible moves
         layers.append(torch.nn.Linear(hidden_layers[-1], self.output_size))
         layers.append(torch.nn.Softmax(dim=-1))
@@ -80,26 +82,28 @@ class ANET(nn.Module):
         states = torch.FloatTensor(states)
         targets = torch.FloatTensor(targets)
 
-        #self.model.train() # fra Kjartan....
+        # self.model.train() # fra Kjartan....
 
         for epoch in range(self.EPOCHS):
             # zero the parameter gradients
             # gradients will contain the loss, how wrong you were
-            self.optimizer.zero_grad()  
+            self.optimizer.zero_grad()
             # forward + backward + optimize
-            outputs = self.model(states)  # the prediction, men denne inneholder ikke 0000
+            # the prediction, men denne inneholder ikke 0000
+            outputs = self.model(states)
             if self.lf == "kldiv":
-                loss = self.loss_function(F.log_softmax(outputs,-1),targets)
+                loss = self.loss_function(F.log_softmax(outputs, -1), targets)
             else:
                 loss = self.loss_function(outputs, targets)
             loss.backward()
             self.optimizer.step()
 
-            accuracy = outputs.argmax(dim=1).eq(targets.argmax(dim=1)).sum().numpy()/len(targets)
+            accuracy = outputs.argmax(dim=1).eq(
+                targets.argmax(dim=1)).sum().numpy()/len(targets)
             print("Loss: ", loss.item(), "fake loss: ", loss)
             print("Accuracy: ", accuracy)
-        
-        #self.model(False) # fra Kjartan....
+
+        # self.model(False) # fra Kjartan....
 
         return loss.item(), accuracy
 
@@ -108,8 +112,14 @@ class ANET(nn.Module):
         :param state:  game state, state = [2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 2, 1, 0, 1]
         :return: probability distribution of all legal actions, and index of the best action
         """
-        state = torch.FloatTensor(state)
-        D = self.get_action_probabilities(state)
+        state_tensor = torch.FloatTensor(state)
+        D = self.get_action_probabilities(state_tensor)
+        if D[0] == np.nan:
+            # Fix numerical issue when renormalizing
+            legal_actions = [i for i in range(len(state[1:])) if state[i] == 0]
+            D = [0 for i in range(len(D))]
+            return D, random.choice(legal_actions)
+
         return D.tolist(), torch.argmax(D).item()
 
     def get_action_probabilities(self, state: torch.Tensor):
@@ -119,13 +129,14 @@ class ANET(nn.Module):
         :return: Probability distribution over all possible actions from state.
         """
         # Forward through ANET
-        self.model.eval() 
+        self.model.eval()
         with torch.no_grad():
             output = self.model(state)
         self.model.train()
         # Set positions that are already taken (cell filled) to zero
         state = state[1:]
-        mask = torch.as_tensor([int(cell == 0) for cell in state], dtype=torch.int)
+        mask = torch.as_tensor([int(cell == 0)
+                                for cell in state], dtype=torch.int)
         output *= mask
         # Normalize values that are not equal to zero
         sum = torch.sum(output)
@@ -138,5 +149,7 @@ class ANET(nn.Module):
         print("Model has been saved to models/{}_{}_ANET_level_{}".format(series_name, size, level))
 
     def load_anet(self, series_name, size, level):
-        self.load_state_dict(torch.load("models/{}_{}_ANET_level_{}".format(series_name, size, level)))
-        print("Loaded model from models/{}_{}_ANET_level_{}".format(series_name, size, level))
+        self.load_state_dict(torch.load(
+            "models/{}_{}_ANET_level_{}".format(series_name, size, level)))
+        print(
+            "Loaded model from models/{}_{}_ANET_level_{}".format(series_name, size, level))
