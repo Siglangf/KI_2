@@ -155,7 +155,7 @@ class MCTS:
 
     def states_to_actionindex(self, state1, state2):
         diff = state1[1:]-state2[1:]
-        return np.nonzero(diff)
+        return np.nonzero(diff)[0][0]
 
 
 if __name__ == '__main__':
