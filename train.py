@@ -29,18 +29,19 @@ STARTING_PLAYER_ID = 1
 BOARD_SIZE = 4
 EPISODES = 200
 NUM_SIMULATIONS = 2000
-NUM_AGENTS = 15
+NUM_AGENTS = 5
 BATCH_SIZE = 0.5
 
 # ANET parameters
-HIDDEN_LAYERS = (32,32) # (48,24)
-LEARNING_RATE = 0.01
-ACTIVATION = 'Tanh'
+HIDDEN_LAYERS = (64,32) #(16,16) #[128]  # (32,32) (48,24) (16,16)
+LEARNING_RATE = 0.1
+ACTIVATION = 'ReLU'
 OPTIMIZER = 'Adam'
 EPOCHS = 1
 
 # MCTS parameters
 EPSILON = 1
+EPSILON_DECAY_DEGREE = 1/2
 C = 1
 # Batch strategy
 BATCH_TYPE_RELATIVE = True
@@ -71,7 +72,11 @@ def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_s
             D, new_root = board_mcts.get_probability_distribution(board_mcts.root, action_space)
             # ADD CASE TO RBUF, (F,D) where F is the feature set consisting of PID and board state, D is the target distribution
             feature = board_actual_game.get_state()
+
             rbuf.append((feature, D))
+            #if random.random() > 0.5:
+                #rbuf.append(rotated(state, D))
+
             action = action_space[np.argmax(D)]
             # PERFOM ACTION IN ACTUAL GAME
             _, _, is_final = board_actual_game.step(action)
@@ -86,7 +91,7 @@ def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_s
         train_losses.append(loss)
         train_accuracies.append(acc)
         # DECAY EPSILON
-        eps *= 0.95
+        eps = 1-(episode/episodes)**EPSILON_DECAY_DEGREE
         # SAVE ANET
         if episode % (episodes//(num_agents-1)) == 0:
             anet.save_anet(series_name, board_size, episode)
@@ -96,6 +101,10 @@ def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_s
     # topp = TOPP(series_name=series_name, board_size=board_size, game=Hex, num_games=NUM_GAMES, episodes=episodes, num_agents=num_agents, hidden_layers=HIDDEN_LAYERS)
     # wins = topp.run_tournament()
     # log_training(series_name, board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy, wins)
+
+def rotated(state, D):
+    player = state[0]
+    return (np.asarray([player] + list(state[:0:-1])), D[::-1])
 
 def plot(train_accuracies, train_losses, board_size, simulations):
         x = np.arange(len(train_accuracies))
@@ -151,6 +160,8 @@ Accuracy: {accuracy}\n\
 
 
 def select_batch(replay_buffer, batch_size, strategy="probability_function",  deg=3, batch_type_relative=True):
+    # batch_size = len(replay_buffer)//2
+    # batch = random.sample(replay_buffer, batch_size)
     if batch_type_relative:
         if batch_size > 1 or batch_size < 0:
             raise ValueError(
@@ -165,7 +176,7 @@ def select_batch(replay_buffer, batch_size, strategy="probability_function",  de
             [i for i in range(len(replay_buffer))], batch_size, p=probabilities)
         batch = [replay_buffer[i] for i in batch_idx]
         return batch
-
+    
 
 def f(x, deg):
     distribution = np.zeros(len(x))

@@ -12,7 +12,7 @@ import random
 
 class ANET(nn.Module):
 
-    def __init__(self, input_size=None, output_size=None, hidden_layers=(60, 30, 20), lr=0.001, activation='ReLU', optimizer='Adam', EPOCHS=20, loss_function="binary_cross_entropy"):
+    def __init__(self, input_size=None, output_size=None, hidden_layers=(60, 30, 20), lr=0.001, activation='ReLU', optimizer='Adam', EPOCHS=20, loss_function="kldiv"):
         super(ANET, self).__init__()  # inherit from super()
 
         self.EPOCHS = EPOCHS
@@ -25,6 +25,7 @@ class ANET(nn.Module):
         self.model = nn.Sequential(*self.layers)
         self.optimizer = self.get_optimizer(optimizer)
         self.loss_function = self.get_loss_function(loss_function)
+        self.lf = loss_function
 
     def get_activation_func(self, activation):
         activation_functions = {
@@ -48,7 +49,8 @@ class ANET(nn.Module):
     def get_loss_function(self, loss_fn):
         loss_function = {
             "binary_cross_entropy": torch.nn.BCELoss(reduction="mean"),
-            "mse": torch.nn.MSELoss()
+            "mse": torch.nn.MSELoss(),
+            "kldiv":torch.nn.KLDivLoss(reduction="batchmean")
         }
         return loss_function[loss_fn]
 
@@ -68,14 +70,6 @@ class ANET(nn.Module):
         layers.append(torch.nn.Softmax(dim=-1))
         return layers
 
-    def forward(self, x: torch.Tensor):
-        """
-        Take the given state and forward it through the network. Return the output of the network.
-        :param x:  tensor([2., 1., 2., 1., 0., 0., 0., 2., 1., 0., 0., 2., 0., 2., 1., 0., 1.])
-        """
-        with torch.no_grad():
-            return self.model(x)
-
     def fit(self, states, targets):
         """
         Train the model. The results from the MCTS is used to train our Actor Neural Network.
@@ -85,19 +79,27 @@ class ANET(nn.Module):
         """
         states = torch.FloatTensor(states)
         targets = torch.FloatTensor(targets)
+
+        #self.model.train() # fra Kjartan....
+
         for epoch in range(self.EPOCHS):
             # zero the parameter gradients
             # gradients will contain the loss, how wrong you were
             self.optimizer.zero_grad()  
             # forward + backward + optimize
-            outputs = self.model(states)  # the prediction
-            loss = self.loss_function(outputs, targets)
+            outputs = self.model(states)  # the prediction, men denne inneholder ikke 0000
+            if self.lf == "kldiv":
+                loss = self.loss_function(F.log_softmax(outputs,-1),targets)
+            else:
+                loss = self.loss_function(outputs, targets)
             loss.backward()
             self.optimizer.step()
 
             accuracy = outputs.argmax(dim=1).eq(targets.argmax(dim=1)).sum().numpy()/len(targets)
             print("Loss: ", loss.item(), "fake loss: ", loss)
             print("Accuracy: ", accuracy)
+        
+        #self.model(False) # fra Kjartan....
 
         return loss.item(), accuracy
 
@@ -136,17 +138,5 @@ class ANET(nn.Module):
         print("Model has been saved to models/{}_{}_ANET_level_{}".format(series_name, size, level))
 
     def load_anet(self, series_name, size, level):
-        self.load_state_dict(torch.load(
-            "models/{}_{}_ANET_level_{}".format(series_name, size, level)))
-        print(
-            "Loaded model from models/{}_{}_ANET_level_{}".format(series_name, size, level))
-
-
-if __name__ == '__main__':
-    # x = np.asarray([[2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 2, 1, 0, 1]])
-    x = [2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 2, 1, 0, 1]
-    y = [2, 1, 2, 1, 0, 0, 0, 2, 1, 0, 0, 0, 0, 2, 0, 0, 1]
-    anet = ANET(4)
-    anet.fit(x, y)
-    x = torch.FloatTensor(x)
-    print(anet.get_move(x))
+        self.load_state_dict(torch.load("models/{}_{}_ANET_level_{}".format(series_name, size, level)))
+        print("Loaded model from models/{}_{}_ANET_level_{}".format(series_name, size, level))
