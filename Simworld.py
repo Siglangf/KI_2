@@ -92,6 +92,8 @@ class Hex:
         return {i: actions[i] for i in range(len(actions))}
 
     def step(self, action):
+        if action not in self.legal_actions():
+            raise ValueError("Illigal action")
         action_cell = self.board.cell_from_position(action)
         action_cell.state = self.player
         state = self.game_state()
@@ -108,6 +110,12 @@ class Hex:
         board_flattened = np.hstack(self.board.to_tuple())
         state = np.insert(board_flattened, 0, self.player)
         return state
+
+    def get_state_as_tuple(self):
+        board_flattened = np.hstack(self.board.to_tuple())
+        state = np.insert(board_flattened, 0, self.player)
+        t = tuple([i for i in state])
+        return t
 
     def reset(self):
         self.__init__(self.size)
