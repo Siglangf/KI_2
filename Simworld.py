@@ -93,7 +93,8 @@ class Hex:
 
     def step(self, action):
         if action not in self.legal_actions():
-            raise ValueError("Illigal action")
+            raise ValueError(
+                f"Illigal action {action} at state {self.get_state()}")
         action_cell = self.board.cell_from_position(action)
         action_cell.state = self.player
         state = self.game_state()
