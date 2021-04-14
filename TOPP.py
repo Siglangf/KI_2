@@ -42,12 +42,14 @@ class TOPP:
         player = 1
         while not single_game.is_final():
             current_state = single_game.get_state()
-            D, action_index = self.agents[actors[player]].get_move(current_state)
+            D, action_index = self.agents[actors[player]].get_move(
+                current_state)
             action = action_space[action_index]
             if not greedy:
                 D /= np.sum(D)
                 if np.isnan(D).any():
-                    D, action_index = self.agents[actors[player]].get_random_move(current_state, D)
+                    D, action_index = self.agents[actors[player]].get_random_move(
+                        current_state, D)
                 else:
                     action_index = np.random.choice(len(D), 1, p=D)[0]
                     action = action_space[action_index]
@@ -56,7 +58,7 @@ class TOPP:
         winner = single_game.get_winner()
         return actors[winner]
 
-    def run_tournament(self, greedy = False):
+    def run_tournament(self, greedy=False):
         """
         Performs a round robin tournament
         """
@@ -67,17 +69,18 @@ class TOPP:
                 actors = {1: player1, 2: player2}
                 winner = self.single_game(actors, greedy)
                 wins[winner] += 1
-                self.update_scoreboard(player1,player2,winner)
+                self.update_scoreboard(player1, player2, winner)
         return wins
-    
+
     def generate_scoreboard(self):
         """ generates self.scoreboard """
         scoreboard = {}
         for p1_level in range(len(self.agents)):
             for p2_level in range(len(self.agents)):
-                scoreboard[str(p1_level) + "-" + str(p2_level)] = [0, 0]     # (wins, losses)
+                scoreboard[str(p1_level) + "-" + str(p2_level)
+                           ] = [0, 0]     # (wins, losses)
         return scoreboard
-    
+
     def update_scoreboard(self, p1_level, p2_level, winner):
         """ update self.scoreboard
         :param p1_id - int indicating id to player 1
@@ -88,7 +91,7 @@ class TOPP:
             self.scoreboard[str(p1_level) + "-" + str(p2_level)][0] += 1
         else:
             self.scoreboard[str(p1_level) + "-" + str(p2_level)][1] += 1
-    
+
     def print_scoreboard_results(self):
         """ prints self.scoreboard """
         print("\n\n      MATCHES   -----------------    RESULTS    ")
@@ -97,3 +100,28 @@ class TOPP:
         for game in self.scoreboard.items():
             result = "({}, {})".format(game[1][0], game[1][1])
             print("       " + game[0] + "    -------------------   " + result)
+
+    def play_random(self,  agent, choice="argmax"):
+        # For test resons
+        starting_player_id = 1
+        wins = 0
+        for i in range(self.num_games):
+            starting_player_id = 1 if starting_player_id == 2 else 2
+            single_game = self.game(self.board_size, starting_player_id)
+            action_space = single_game.get_action_space()
+            while not single_game.is_final():
+                if single_game.player == 1:
+                    current_state = single_game.get_state()
+                    if starting_player_id == 2:
+                        current_state[0] = 2
+                    D, action_index = self.agents[agent].get_move(
+                        current_state)
+                    action = action_space[action_index]
+                if single_game.player == 2:
+                    action_list = single_game.legal_actions()
+                    action = random.sample(action_list, 1)[0]
+                single_game.step(action)
+            winner = single_game.get_winner()
+            if winner == 1:
+                wins += 1
+        return wins/self.num_games

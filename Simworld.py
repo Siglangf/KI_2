@@ -2,6 +2,9 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from random import randint
 import numpy as np
+import time
+from IPython import display
+import matplotlib.animation as animation
 NEIGHBOAR_MAPPING = {(0, 1): 'UP', (0, -1): 'DOWN', (-1, 0): 'LEFT',
                      (1, 0): 'RIGHT', (-1, 1): 'LEFT_DIAG', (1, -1): 'RIGHT_DIAG'}
 COLOR_MAP = {0: "white", 1: "red", 2: "black"}
@@ -214,7 +217,7 @@ def visualize_state(environment, show_labels=False):
     plt.close()
     if environment.is_final():
         if environment.player == 1:
-            winner = "Blue player"
+            winner = "Black player"
         elif environment.player == 2:
             winner = "Red player"
         else:
@@ -222,3 +225,23 @@ def visualize_state(environment, show_labels=False):
         print(f"{winner} won the game")
 
     return fig
+
+
+def visualize_game_jupyter(frames=[], delay=1):
+    for frame in frames:
+        display.clear_output(wait=True)
+        display.display(frame)
+        if frame == frames[-1]:
+            print("Game ended")
+        time.sleep(1)
+
+
+def visualize_game_window(frames=[], delay=1):
+    for frame in frames:
+        plt.cla()
+        plt.figure(frame)
+        plt.show()
+
+        if frame == frames[-1]:
+            print("Game ended")
+        time.sleep(1)

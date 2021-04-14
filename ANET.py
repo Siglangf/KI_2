@@ -119,7 +119,7 @@ class ANET(nn.Module):
             D, action_index = self.get_random_move(state, D)
             return D, action_index
         return D.tolist(), torch.argmax(D).item()
-    
+
     def get_random_move(self, state, D):
         state = state[1:]
         legal_actions = [i for i in range(len(state)) if state[i] == 0]

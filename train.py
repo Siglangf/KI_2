@@ -28,16 +28,25 @@ GAME = Hex
 STARTING_PLAYER_ID = 1
 BOARD_SIZE = 4
 EPISODES = 200
+<< << << < Updated upstream
 NUM_SIMULATIONS = 2000
+== == == =
+NUM_SIMULATIONS = 1000
+>>>>>> > Stashed changes
 NUM_AGENTS = 5
 BATCH_SIZE = 0.5
 
 # ANET parameters
-HIDDEN_LAYERS = (64,32) #(16,16) #[128]  # (32,32) (48,24) (16,16)
+<< << << < Updated upstream
+HIDDEN_LAYERS = (64, 32)  # (16,16) #[128]  # (32,32) (48,24) (16,16)
 LEARNING_RATE = 0.1
+== == == =
+HIDDEN_LAYERS = [128]
+LEARNING_RATE = 0.001
+>>>>>> > Stashed changes
 ACTIVATION = 'ReLU'
 OPTIMIZER = 'Adam'
-EPOCHS = 1
+EPOCHS = 5
 
 # MCTS parameters
 EPSILON = 1
@@ -50,7 +59,7 @@ BS_DEGREE = 3
 # --------------------------------------------------------LOGIC---------------------------------------------------------
 
 
-def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_simulations, num_agents, batch_strategy, batch_size, eps, log=True):
+def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_simulations, num_agents, batch_strategy, batch_size, eps, log=True, visualize=False):
     train_losses = []
     train_accuracies = []
     # CLEAR REPLAY BUFFER
@@ -65,17 +74,23 @@ def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_s
         # INITIALIZE MCT to a single root
         board_mcts = MCTS(eps, anet, C)
         root = Node(board_actual_game)
+        board_mcts.eps = 1-(episode/episodes)**(EPSILON_DECAY_DEGREE)
+        game_frames = []
         # FOR EACH STEP IN EPISODE/ACTUAL GAME
         while not is_final:
+            if visualize:
+                frame = visualize_state(board_actual_game)
+                frames.append(frame)
             board_mcts.set_root(root)
             board_mcts.run_simulations(num_simulations)
-            D, new_root = board_mcts.get_probability_distribution(board_mcts.root, action_space)
+            D, new_root = board_mcts.get_probability_distribution(
+                board_mcts.root, action_space)
             # ADD CASE TO RBUF, (F,D) where F is the feature set consisting of PID and board state, D is the target distribution
             feature = board_actual_game.get_state()
 
             rbuf.append((feature, D))
-            #if random.random() > 0.5:
-                #rbuf.append(rotated(state, D))
+            # if random.random() > 0.5:
+            #rbuf.append(rotated(state, D))
 
             action = action_space[np.argmax(D)]
             # PERFOM ACTION IN ACTUAL GAME
@@ -83,8 +98,9 @@ def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_s
             # SET NEW ROOT IN MCT
             root = new_root
 
-        # TRAIN ANET ON RANDOM MINIBATCH 
-        batch = select_batch(rbuf, batch_size, strategy = batch_strategy, deg = BS_DEGREE, batch_type_relative = BATCH_TYPE_RELATIVE)
+        # TRAIN ANET ON RANDOM MINIBATCH
+        batch = select_batch(rbuf, batch_size, strategy=batch_strategy,
+                             deg=BS_DEGREE, batch_type_relative=BATCH_TYPE_RELATIVE)
         features = [replay[0] for replay in batch]
         labels = [replay[1] for replay in batch]
         loss, acc = anet.fit(features, labels)
@@ -95,35 +111,38 @@ def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_s
         # SAVE ANET
         if episode % (episodes//(num_agents-1)) == 0:
             anet.save_anet(series_name, board_size, episode)
-    
     plot(train_accuracies, train_losses, board_size, num_simulations)
 
-    # topp = TOPP(series_name=series_name, board_size=board_size, game=Hex, num_games=NUM_GAMES, episodes=episodes, num_agents=num_agents, hidden_layers=HIDDEN_LAYERS)
-    # wins = topp.run_tournament()
-    # log_training(series_name, board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy, wins)
+    topp = TOPP(series_name=series_name, board_size=board_size, game=Hex, num_games=1,
+                episodes=episodes, num_agents=num_agents, hidden_layers=HIDDEN_LAYERS)
+    wins = topp.run_tournament(greedy=True)
+    log_training(series_name, board_size, episodes, num_simulations,
+                 num_agents, batch_size, loss, train_accuracies[-1], wins)
+
 
 def rotated(state, D):
     player = state[0]
     return (np.asarray([player] + list(state[:0:-1])), D[::-1])
 
+
 def plot(train_accuracies, train_losses, board_size, simulations):
-        x = np.arange(len(train_accuracies))
-        fig = plt.figure(figsize=(12,5))
-        title = 'Size: {}   Simulations: {} '.format(board_size, simulations)
-        fig.suptitle(title, fontsize=10)
-        gs = fig.add_gridspec(1, 2)
-        ax = fig.add_subplot(gs[0,0])
-        ax.set_title("Accuracy")
-        ax.plot(x, train_accuracies, color='tab:green', label="Train")
-        plt.grid()
-        plt.legend()
-        ax = fig.add_subplot(gs[0,1])
-        ax.set_title("Loss")
-        ax.plot(x, train_losses, color='tab:orange', label="Train")
-        plt.legend()
-        plt.grid()
-        plt.savefig("stats/size-{}".format(board_size))
-        plt.close()
+    x = np.arange(len(train_accuracies))
+    fig = plt.figure(figsize=(12, 5))
+    title = 'Size: {}   Simulations: {} '.format(board_size, simulations)
+    fig.suptitle(title, fontsize=10)
+    gs = fig.add_gridspec(1, 2)
+    ax = fig.add_subplot(gs[0, 0])
+    ax.set_title("Accuracy")
+    ax.plot(x, train_accuracies, color='tab:green', label="Train")
+    plt.grid()
+    plt.legend()
+    ax = fig.add_subplot(gs[0, 1])
+    ax.set_title("Loss")
+    ax.plot(x, train_losses, color='tab:orange', label="Train")
+    plt.legend()
+    plt.grid()
+    plt.savefig("stats/size-{}".format(board_size))
+    plt.close()
 
 
 def log_training(series_name, board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy, wins=[]):
@@ -133,7 +152,7 @@ def log_training(series_name, board_size, episodes, num_simulations, num_agents,
         [f"Win {i}: {score}" for i, score in enumerate(wins)])
     with open(f"stats/log.txt", 'a') as f:
         stats = f"\n\
-############################################ {series_name} #############################################\n\
+# {series_name} #############################################\n\
 # Default parameters\n\
 BOARD_SIZE ={board_size}\n\
 EPISODES = {episodes}\n\
@@ -176,7 +195,7 @@ def select_batch(replay_buffer, batch_size, strategy="probability_function",  de
             [i for i in range(len(replay_buffer))], batch_size, p=probabilities)
         batch = [replay_buffer[i] for i in batch_idx]
         return batch
-    
+
 
 def f(x, deg):
     distribution = np.zeros(len(x))
@@ -187,6 +206,7 @@ def f(x, deg):
 
 
 if __name__ == '__main__':
+    """
     if len(sys.argv) > 1 and sys.argv[1] == "input":
         series_name = input("Series Name: ")
         board_size = int(input("Board size: "))
@@ -203,16 +223,24 @@ if __name__ == '__main__':
         num_agents = NUM_AGENTS
         batch_size = BATCH_SIZE
         eps = EPSILON
-
+    """
+    series_name = "longrun_good_param"
+    board_size = BOARD_SIZE
+    episodes = EPISODES
+    num_simulations = NUM_SIMULATIONS
+    num_agents = NUM_AGENTS
+    batch_size = BATCH_SIZE
+    eps = EPSILON
     board_actual_game = Hex(board_size)
     batch_strategy = "probability_function"
 
     anet = ANET(input_size=board_size, hidden_layers=HIDDEN_LAYERS,
                 lr=LEARNING_RATE, activation=ACTIVATION, optimizer=OPTIMIZER, EPOCHS=EPOCHS)
- 
+
     if os.path.exists(f"models/{series_name}_{board_size}_ANET_level_{0}"):
         # ! NOT TESTED YET
-        anet.load_anet(series_name, board_size, episodes)
+        last = int(episodes/(num_agents-1)/episodes)
+        anet.load_anet(series_name, board_size, last)
         series_name += "continued"
     train_anet(series_name, anet, board_size, board_actual_game, episodes, num_simulations,
                num_agents, batch_strategy, batch_size, eps)
