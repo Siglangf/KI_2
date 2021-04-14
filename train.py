@@ -12,7 +12,7 @@ from graph import Node
 from state import State, NimState
 from mcts import *
 from ANET import ANET
-from Simworld import visualize_state, Hex
+from Simworld import visualize_state, Hex, visualize_game_jupyter
 from tqdm import tqdm
 import time
 import math
@@ -28,22 +28,13 @@ GAME = Hex
 STARTING_PLAYER_ID = 1
 BOARD_SIZE = 4
 EPISODES = 200
-<< << << < Updated upstream
 NUM_SIMULATIONS = 2000
-== == == =
-NUM_SIMULATIONS = 1000
->>>>>> > Stashed changes
 NUM_AGENTS = 5
 BATCH_SIZE = 0.5
 
 # ANET parameters
-<< << << < Updated upstream
 HIDDEN_LAYERS = (64, 32)  # (16,16) #[128]  # (32,32) (48,24) (16,16)
 LEARNING_RATE = 0.1
-== == == =
-HIDDEN_LAYERS = [128]
-LEARNING_RATE = 0.001
->>>>>> > Stashed changes
 ACTIVATION = 'ReLU'
 OPTIMIZER = 'Adam'
 EPOCHS = 5
@@ -59,7 +50,8 @@ BS_DEGREE = 3
 # --------------------------------------------------------LOGIC---------------------------------------------------------
 
 
-def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_simulations, num_agents, batch_strategy, batch_size, eps, log=True, visualize=False):
+def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_simulations, num_agents, batch_size, eps, epsilon_decay_degree=EPSILON_DECAY_DEGREE, bs_degree=BS_DEGREE, batch_type_relative=BATCH_TYPE_RELATIVE, vis_episode=[]):
+
     train_losses = []
     train_accuracies = []
     # CLEAR REPLAY BUFFER
@@ -74,13 +66,12 @@ def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_s
         # INITIALIZE MCT to a single root
         board_mcts = MCTS(eps, anet, C)
         root = Node(board_actual_game)
-        board_mcts.eps = 1-(episode/episodes)**(EPSILON_DECAY_DEGREE)
         game_frames = []
         # FOR EACH STEP IN EPISODE/ACTUAL GAME
         while not is_final:
-            if visualize:
+            if episode in vis_episode:
                 frame = visualize_state(board_actual_game)
-                frames.append(frame)
+                game_frames.append(frame)
             board_mcts.set_root(root)
             board_mcts.run_simulations(num_simulations)
             D, new_root = board_mcts.get_probability_distribution(
@@ -90,39 +81,34 @@ def train_anet(series_name, anet, board_size, board_actual_game, episodes, num_s
 
             rbuf.append((feature, D))
             # if random.random() > 0.5:
-            #rbuf.append(rotated(state, D))
+            # rbuf.append(rotated(state, D))
 
             action = action_space[np.argmax(D)]
             # PERFOM ACTION IN ACTUAL GAME
             _, _, is_final = board_actual_game.step(action)
             # SET NEW ROOT IN MCT
             root = new_root
+        if episode in vis_episode:
+            frame = visualize_state(board_actual_game)
+            game_frames.append(frame)
+            visualize_game_jupyter(game_frames)
 
         # TRAIN ANET ON RANDOM MINIBATCH
-        batch = select_batch(rbuf, batch_size, strategy=batch_strategy,
-                             deg=BS_DEGREE, batch_type_relative=BATCH_TYPE_RELATIVE)
+        batch = select_batch(rbuf, batch_size,
+                             deg=bs_degree, batch_type_relative=batch_type_relative)
         features = [replay[0] for replay in batch]
         labels = [replay[1] for replay in batch]
         loss, acc = anet.fit(features, labels)
         train_losses.append(loss)
         train_accuracies.append(acc)
         # DECAY EPSILON
-        eps = 1-(episode/episodes)**EPSILON_DECAY_DEGREE
+        eps = 1-(episode/episodes)**epsilon_decay_degree
         # SAVE ANET
         if episode % (episodes//(num_agents-1)) == 0:
             anet.save_anet(series_name, board_size, episode)
-    plot(train_accuracies, train_losses, board_size, num_simulations)
 
-    topp = TOPP(series_name=series_name, board_size=board_size, game=Hex, num_games=1,
-                episodes=episodes, num_agents=num_agents, hidden_layers=HIDDEN_LAYERS)
-    wins = topp.run_tournament(greedy=True)
-    log_training(series_name, board_size, episodes, num_simulations,
-                 num_agents, batch_size, loss, train_accuracies[-1], wins)
-
-
-def rotated(state, D):
-    player = state[0]
-    return (np.asarray([player] + list(state[:0:-1])), D[::-1])
+    # log_training(series_name, board_size, episodes,
+    #             num_simulations, num_agents, batch_size)
 
 
 def plot(train_accuracies, train_losses, board_size, simulations):
@@ -145,7 +131,7 @@ def plot(train_accuracies, train_losses, board_size, simulations):
     plt.close()
 
 
-def log_training(series_name, board_size, episodes, num_simulations, num_agents, batch_size, loss, accuracy, wins=[]):
+def log_training(series_name, board_size, episodes, num_simulations, num_agents, batch_size):
     total = sum(wins)
     wins = [number/total for number in wins]
     winstring = "\n".join(
@@ -154,6 +140,7 @@ def log_training(series_name, board_size, episodes, num_simulations, num_agents,
         stats = f"\n\
 # {series_name} #############################################\n\
 # Default parameters\n\
+SERIES_NAME = {series_name}\n\
 BOARD_SIZE ={board_size}\n\
 EPISODES = {episodes}\n\
 NUM_SIMULATIONS = {num_simulations}\n\
@@ -169,16 +156,11 @@ EPOCHS = {EPOCHS}\n\n\
 EPSILON = {EPSILON}\n\
 C = {C}\n\
 # Batch strategy\n\
-BS_DEGREE = {BS_DEGREE}\n\n\
-# Results \n\
-Loss: {loss}\n\
-Accuracy: {accuracy}\n\
-# Win percentages of agents\n\
- {winstring}"
+BS_DEGREE = {BS_DEGREE}\n"
         f. write(stats)
 
 
-def select_batch(replay_buffer, batch_size, strategy="probability_function",  deg=3, batch_type_relative=True):
+def select_batch(replay_buffer, batch_size, deg=3, batch_type_relative=True):
     # batch_size = len(replay_buffer)//2
     # batch = random.sample(replay_buffer, batch_size)
     if batch_type_relative:
@@ -188,13 +170,12 @@ def select_batch(replay_buffer, batch_size, strategy="probability_function",  de
         batch_size = math.ceil(batch_size*len(replay_buffer))
     elif batch_size > len(replay_buffer):
         return replay_buffer
-    if strategy == "probability_function":
-        # Choose based on probability function
-        probabilities = f(replay_buffer, deg)
-        batch_idx = np.random.choice(
-            [i for i in range(len(replay_buffer))], batch_size, p=probabilities)
-        batch = [replay_buffer[i] for i in batch_idx]
-        return batch
+    # Choose based on probability function
+    probabilities = f(replay_buffer, deg)
+    batch_idx = np.random.choice(
+        [i for i in range(len(replay_buffer))], batch_size, p=probabilities)
+    batch = [replay_buffer[i] for i in batch_idx]
+    return batch
 
 
 def f(x, deg):
@@ -232,7 +213,6 @@ if __name__ == '__main__':
     batch_size = BATCH_SIZE
     eps = EPSILON
     board_actual_game = Hex(board_size)
-    batch_strategy = "probability_function"
 
     anet = ANET(input_size=board_size, hidden_layers=HIDDEN_LAYERS,
                 lr=LEARNING_RATE, activation=ACTIVATION, optimizer=OPTIMIZER, EPOCHS=EPOCHS)
@@ -243,4 +223,4 @@ if __name__ == '__main__':
         anet.load_anet(series_name, board_size, last)
         series_name += "continued"
     train_anet(series_name, anet, board_size, board_actual_game, episodes, num_simulations,
-               num_agents, batch_strategy, batch_size, eps)
+               num_agents, batch_size, eps)
