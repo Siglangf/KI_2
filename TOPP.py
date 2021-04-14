@@ -1,9 +1,10 @@
 from ANET import ANET
-from Simworld import Hex
+from Simworld import Hex, visualize_game_jupyter, visualize_state, show_visualization_jupyter
 import random
 import itertools
 import numpy as np
 import torch
+import time
 
 
 class TOPP:
@@ -12,6 +13,7 @@ class TOPP:
         self.hidden_layers = hidden_layers
         self.board_size = board_size
         self.game = game
+        self.level_mapping = {}
         self.agents = self.load_agents(series_name, episodes, num_agents)
         self.num_games = num_games
         self.scoreboard = self.generate_scoreboard()
@@ -29,9 +31,10 @@ class TOPP:
                            self.board_size, num_games_trained)
             anet.model.eval()
             players.append(anet)
+            self.level_mapping[len(players)-1] = num_games_trained
         return players
 
-    def single_game(self, actors, greedy):
+    def single_game(self, actors, greedy, visualize=False):
         """
         Plays one single game
         :param: actors = {1: p1, 2: p2}
@@ -40,7 +43,11 @@ class TOPP:
         single_game = self.game(self.board_size)
         action_space = single_game.get_action_space()
         player = 1
+        game_frames = []
         while not single_game.is_final():
+            if visualize:
+                frame = visualize_state(single_game)
+                game_frames.append(frame)
             current_state = single_game.get_state()
             D, action_index = self.agents[actors[player]].get_move(
                 current_state)
@@ -55,10 +62,13 @@ class TOPP:
                     action = action_space[action_index]
             single_game.step(action)
             player = single_game.player
+        if visualize:
+            frame = visualize_state(single_game)
+            game_frames.append(frame)
         winner = single_game.get_winner()
-        return actors[winner]
+        return actors[winner], game_frames
 
-    def run_tournament(self, greedy=False):
+    def run_tournament(self, greedy=False, visualize=False):
         """
         Performs a round robin tournament
         """
@@ -67,9 +77,16 @@ class TOPP:
         for player1, player2 in opponents:
             for _ in range(self.num_games):
                 actors = {1: player1, 2: player2}
-                winner = self.single_game(actors, greedy)
+                winner, game_frames = self.single_game(
+                    actors, greedy, visualize)
                 wins[winner] += 1
                 self.update_scoreboard(player1, player2, winner)
+                if visualize:
+                    show_visualization_jupyter(game_frames[-1])
+                    print(
+                        f"PLAYER 1: level {self.level_mapping[player1]} VS PLAYER 2: level {self.level_mapping[player2]}. LEVEL {self.level_mapping[winner]} wins!!!!!!")
+                    input("")
+
         return wins
 
     def generate_scoreboard(self):
@@ -77,7 +94,7 @@ class TOPP:
         scoreboard = {}
         for p1_level in range(len(self.agents)):
             for p2_level in range(len(self.agents)):
-                scoreboard[str(p1_level) + "-" + str(p2_level)
+                scoreboard[str(self.level_mapping[p1_level]) + "-" + str(self.level_mapping[p2_level])
                            ] = [0, 0]     # (wins, losses)
         return scoreboard
 
@@ -88,9 +105,11 @@ class TOPP:
         :param sp_won - boolean indicating if starting player won the game
         """
         if p1_level == winner:
-            self.scoreboard[str(p1_level) + "-" + str(p2_level)][0] += 1
+            self.scoreboard[str(self.level_mapping[p1_level]) +
+                            "-" + str(self.level_mapping[p2_level])][0] += 1
         else:
-            self.scoreboard[str(p1_level) + "-" + str(p2_level)][1] += 1
+            self.scoreboard[str(self.level_mapping[p1_level]) +
+                            "-" + str(self.level_mapping[p2_level])][1] += 1
 
     def print_scoreboard_results(self):
         """ prints self.scoreboard """

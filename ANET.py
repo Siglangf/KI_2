@@ -82,14 +82,11 @@ class ANET(nn.Module):
         states = torch.FloatTensor(states)
         targets = torch.FloatTensor(targets)
 
-        # self.model.train() # fra Kjartan....
-
         for epoch in range(self.EPOCHS):
             # zero the parameter gradients
             # gradients will contain the loss, how wrong you were
             self.optimizer.zero_grad()
             # forward + backward + optimize
-            # the prediction, men denne inneholder ikke 0000
             outputs = self.model(states)
             if self.lf == "kldiv":
                 loss = self.loss_function(F.log_softmax(outputs, -1), targets)
@@ -100,10 +97,6 @@ class ANET(nn.Module):
 
             accuracy = outputs.argmax(dim=1).eq(
                 targets.argmax(dim=1)).sum().numpy()/len(targets)
-            print("Loss: ", loss.item(), "fake loss: ", loss)
-            print("Accuracy: ", accuracy)
-
-        # self.model(False) # fra Kjartan....
 
         return loss.item(), accuracy
 

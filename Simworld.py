@@ -227,6 +227,11 @@ def visualize_state(environment, show_labels=False):
     return fig
 
 
+def show_visualization_jupyter(frame):
+    display.clear_output(wait=True)
+    display.display(frame)
+
+
 def visualize_game_jupyter(frames=[], delay=1):
     for frame in frames:
         display.clear_output(wait=True)
