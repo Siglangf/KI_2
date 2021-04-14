@@ -3,6 +3,7 @@ from Simworld import Hex
 import random
 import itertools
 import numpy as np
+import torch
 
 
 class TOPP:
@@ -44,11 +45,12 @@ class TOPP:
             D, action_index = self.agents[actors[player]].get_move(current_state)
             action = action_space[action_index]
             if not greedy:
-                print(D)
                 D /= np.sum(D)
-                action_index = np.random.choice(len(D), 1, p=D)[0]
-                action = action_space[action_index]
-
+                if np.isnan(D).any():
+                    D, action_index = self.agents[actors[player]].get_random_move(current_state, D)
+                else:
+                    action_index = np.random.choice(len(D), 1, p=D)[0]
+                    action = action_space[action_index]
             single_game.step(action)
             player = single_game.player
         winner = single_game.get_winner()

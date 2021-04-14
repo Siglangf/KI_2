@@ -114,13 +114,18 @@ class ANET(nn.Module):
         """
         state_tensor = torch.FloatTensor(state)
         D = self.get_action_probabilities(state_tensor)
-        if D[0] == np.nan:
+        if torch.isnan(D).any().item():
             # Fix numerical issue when renormalizing
-            legal_actions = [i for i in range(len(state[1:])) if state[i] == 0]
-            D = [0 for i in range(len(D))]
-            return D, random.choice(legal_actions)
-
+            D, action_index = self.get_random_move(state, D)
+            return D, action_index
         return D.tolist(), torch.argmax(D).item()
+    
+    def get_random_move(self, state, D):
+        state = state[1:]
+        legal_actions = [i for i in range(len(state)) if state[i] == 0]
+        D = [0 for i in range(len(D))]
+        action_index = random.choice(legal_actions)
+        return D, action_index
 
     def get_action_probabilities(self, state: torch.Tensor):
         """
