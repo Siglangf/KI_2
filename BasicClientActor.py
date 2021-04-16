@@ -23,9 +23,10 @@ class BasicClientActor(BasicClientActorAbs):
 
         # This is an example player who picks random moves. REMOVE THIS WHEN YOU ADD YOUR OWN CODE !!
         #############################
-        if state[0] == 2:
-            state[0] = 1
-        _, next_move = self.actor.get_move(state)
+        #if state[0] == 2:
+        #    state[0] = 1
+
+        _, next_move = self.actor.get_move_OHT(state, self.board_size, self.starting_player)
 
         # ?: switch row and col
 

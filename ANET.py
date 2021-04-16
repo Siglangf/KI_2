@@ -99,6 +99,26 @@ class ANET(nn.Module):
                 targets.argmax(dim=1)).sum().numpy()/len(targets)
 
         return loss.item(), accuracy
+    
+    def get_move_OHT(self, state, board_size, starting_player):
+        if starting_player == 2:
+            player = 1 if state[0] == 2 else 2
+            board_state = state[1:]
+            for i in range(len(board_state)):
+                if board_state[i] == 1 or board_state[i] == 2:
+                    board_state[i] = 2 if board_state[i] == 1 else 1
+            board_state = np.array(board_state).reshape(board_size, board_size).T.flatten()
+            board_state = np.insert(board_state, 0, player)
+            _, action_index = self.get_move(board_state)
+            # get correct action index
+            mask = [0 for i in range(state)]
+            mask[action_index] = 1
+            mask = np.array(mask).reshape(board_size, board_size).T.flatten()
+            action_index = np.where(mask == 1)[0][0]
+            return _, action_index
+        else:
+            return self.get_move(state)
+
 
     def get_move(self, state):
         """
@@ -107,8 +127,7 @@ class ANET(nn.Module):
         """
         state_tensor = torch.FloatTensor(state)
         D = self.get_action_probabilities(state_tensor)
-        if torch.isnan(D).any().item():
-            # Fix numerical issue when renormalizing
+        if torch.isnan(D).any().item(): #Fix numerical issue when renormalizing
             D, action_index = self.get_random_move(state, D)
             return D, action_index
         return D.tolist(), torch.argmax(D).item()
@@ -151,3 +170,10 @@ class ANET(nn.Module):
             "models/{}_{}_ANET_level_{}".format(series_name, size, level)))
         print(
             "Loaded model from models/{}_{}_ANET_level_{}".format(series_name, size, level))
+
+if __name__ == '__main__':
+    state = [1, 1, 2, 1, 0, 0, 0, 2, 1, 0]
+    board_size = 3
+    starting_player = 2
+    anet = ANET(board_size)
+    anet.get_move_OHT(state, board_size, starting_player)
