@@ -2,6 +2,8 @@ import math
 from Simworld import Hex
 from ANET import ANET
 from BasicClientActorAbs import BasicClientActorAbs
+import numpy as np
+import copy
 
 
 class BasicClientActor(BasicClientActorAbs):
@@ -25,7 +27,14 @@ class BasicClientActor(BasicClientActorAbs):
         #############################
         # if state[0] == 2:
         #    state[0] = 1
-
+        env = Hex(self.board_size, start_player=state[0])
+        for i, cell in enumerate(np.hstack(env.board.cells)):
+            cell.state = state[i+1]
+        for action in env.legal_actions():
+            env2 = copy.deepcopy(env)
+            _, _, is_final = env2.step(action)
+            if is_final:
+                return action
         _, next_move = self.actor.get_move_OHT(
             state, self.board_size, self.starting_player)
 
