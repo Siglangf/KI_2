@@ -23,10 +23,11 @@ class BasicClientActor(BasicClientActorAbs):
 
         # This is an example player who picks random moves. REMOVE THIS WHEN YOU ADD YOUR OWN CODE !!
         #############################
-        #if state[0] == 2:
+        # if state[0] == 2:
         #    state[0] = 1
 
-        _, next_move = self.actor.get_move_OHT(state, self.board_size, self.starting_player)
+        _, next_move = self.actor.get_move_OHT(
+            state, self.board_size, self.starting_player)
 
         # ?: switch row and col
 
@@ -49,9 +50,10 @@ class BasicClientActor(BasicClientActorAbs):
         """
 
         self.series_id = series_id
+        print(f"Playing as player {series_id}")
         #############################
         self.board_size = game_params[0]
-        self.actor = ANET(self.board_size)
+        self.actor = ANET(self.board_size, hidden_layers=self.hidden_layers)
         self.actor.load_anet(self.actor_tag, self.board_size, self.actor_level)
         self.actor.model.eval()
 
@@ -63,6 +65,7 @@ class BasicClientActor(BasicClientActorAbs):
         :return
         """
         self.starting_player = start_player
+        print(f"Player, {start_player} starts")
         #############################
         #
         #
@@ -145,7 +148,9 @@ if __name__ == '__main__':
     print("Choose which actor tag to use:")
     actor_tag = input("Actor tag: ")
     actor_level = int(input("Actor level: "))
+    hidden_layers = eval(input("Hidden layers of actor"))
     bsa = BasicClientActor(verbose=True)
     bsa.actor_tag = actor_tag
     bsa.actor_level = actor_level
+    bsa.hidden_layers = hidden_layers
     bsa.connect_to_server()

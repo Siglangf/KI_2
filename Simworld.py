@@ -21,7 +21,7 @@ class Hex:
     def __init__(self, size, start_player=1):
         self.size = size
         # Player one represented as 1 and player two represented as 2
-        self.player = 1
+        self.player = start_player
         self.board = Board(size)
         cells = self.board.cells
         # Defining owned sides of the board for each player
