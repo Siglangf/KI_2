@@ -27,19 +27,59 @@ class BasicClientActor(BasicClientActorAbs):
         #############################
         # if state[0] == 2:
         #    state[0] = 1
-        env = Hex(self.board_size, start_player=state[0])
+
+        player = state[0]
+        opponent = 1 if player == 2 else 2
+
+        env = Hex(self.board_size, start_player=player)
         for i, cell in enumerate(np.hstack(env.board.cells)):
             cell.state = state[i+1]
+
+        # One step win
         for action in env.legal_actions():
             env2 = copy.deepcopy(env)
+            env2.player = player
             _, _, is_final = env2.step(action)
             if is_final:
+                print("Used heuristic one step")
                 return action
+        # One step block
+        for action in env.legal_actions():
+            env2 = copy.deepcopy(env)
+            env2.player = opponent
+            _, _, is_final = env2.step(action)
+            if is_final:
+                print("Blocked one step")
+                return action
+        # Two step win
+        for action in env.legal_actions():
+            env2 = copy.deepcopy(env)
+            env2.player = player
+            _, _, is_final = env2.step(action)
+            for action2 in env2.legal_actions():
+                env3 = copy.deepcopy(env2)
+                env3.player = player
+                _, _, is_final = env3.step(action2)
+                if is_final:
+                    print("Used heuristic two step")
+                    return action
+
+        # Two step block
+        for action in env.legal_actions():
+            env2 = copy.deepcopy(env)
+            env2.player = opponent
+            _, _, is_final = env2.step(action)
+            for action2 in env2.legal_actions():
+                env3 = copy.deepcopy(env2)
+                env3.player = opponent
+                _, _, is_final = env3.step(action2)
+                if is_final:
+                    print("Blocked two step")
+                    return action
+
         _, next_move = self.actor.get_move_OHT(
             state, self.board_size, self.starting_player)
-
         # ?: switch row and col
-
         row = next_move//self.board_size
         col = next_move % self.board_size
         next_move = (row, col)
@@ -57,7 +97,8 @@ class BasicClientActor(BasicClientActorAbs):
         :return
 
         """
-
+        self.win_count = 0
+        self.games_played = 0
         self.series_id = series_id
         print(f"Playing as player {series_id}")
         #############################
@@ -94,13 +135,14 @@ class BasicClientActor(BasicClientActorAbs):
         #############################
         #
         #
-
+        self.games_played += 1
+        if winner == self.series_id:
+            self.win_count += 1
+        print(f"Games played: {self.games_played}")
+        print(f"Wins: {self.win_count}")
         #
         #
         ##############################
-        print("Game over, these are the stats:")
-        print('Winner: ' + str(winner))
-        print('End state: ' + str(end_state))
 
     def handle_series_over(self, stats):
         """
